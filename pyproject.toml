@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "app-name"
+name = "eeg_fmri_cleaning_algorithms_comparison"
 version = "0.1.0"
-description = "A beautiful description."
-authors = ["Reinder Vos de Wael <reinder.vosdewael@childmind.org>"]
+description = "This is to compare the different cleaning algorithm for eeg fmri studies. "
+authors = ["Samuel Louviot <sam.louviot@gmail.com>"]
 license = "LGPL-2.1"
 readme = "README.md"
-packages = [{include = "APP_NAME", from = "src"}]
+packages = [{include = "eeg_fmri_cleaning_algorithms_comparison", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
