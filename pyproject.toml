@@ -3,12 +3,15 @@ name = "eeg_fmri_cleaning_algorithms_comparison"
 version = "0.1.0"
 description = "This is to compare the different cleaning algorithm for eeg fmri studies. "
 authors = ["Samuel Louviot <sam.louviot@gmail.com>"]
-license = "LGPL-2.1"
+license = "LGPL-3.0"
 readme = "README.md"
-packages = [{include = "eeg_fmri_cleaning_algorithms_comparison", from = "src"}]
+package-mode = true
+packages = [
+  {include = "cleaner_pipelines.py", from = "src/eeg_fmri_cleaning_algorithms_comparison"}
+            ]
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = "^3.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
@@ -19,6 +22,9 @@ ruff = "^0.3.0"
 
 [tool.poetry.group.docs.dependencies]
 pdoc = "^14.4.0"
+
+[tool.poetry.scripts]
+run_pipelines = "eeg_fmri_cleaning_algorithms_comparison.main:main"
 
 [tool.pytest.ini_options]
 pythonpath = [
