@@ -23,12 +23,20 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ===============================================================================
 import os
+import argparse
 
 import bids
 
 from .cleaner_pipelines import CleanerPipeline
 
 
+args = argparse.ArgumentParser(description="Run the CBIN-CLEANER pipeline on EEG data.")
+args.add_argument("subject", 
+                  type=str,
+                  help="The subject to process.",
+                  required=True)
+
+input_args = args.parse_args()
 def run_cbin_cleaner(filename: str | os.PathLike) -> None:  # noqa: D103
     cleaner = CleanerPipeline(filename)
     cleaner.read_raw()
@@ -47,11 +55,14 @@ def run_cbin_cleaner_pyprep_asr(filename: str | os.PathLike) -> None:  # noqa: D
     cleaner.run_pyprep()
     cleaner.run_asr()
     
-if __name__ == "__main__":
+def main(**kwargs):
     data_path = "/projects/EEG_FMRI/bids_eeg/BIDS/NEW/RAW"
 
+
     layout = bids.BIDSLayout(data_path)
-    file_list = layout.get(extension=".set")
+    file_list = layout.get(
+        **kwargs,
+        extension=".set")
 
     for filename, BIDSFile_object in file_list.items():
         if BIDSFile_object.task is any("checker", "checkeroff"):
@@ -59,3 +70,6 @@ if __name__ == "__main__":
                                     run_cbin_cleaner_asr, 
                                     run_cbin_cleaner_pyprep_asr]:
                 pipeline_function(filename)
+    
+if __name__ == "__main__":
+    main(input_args)
