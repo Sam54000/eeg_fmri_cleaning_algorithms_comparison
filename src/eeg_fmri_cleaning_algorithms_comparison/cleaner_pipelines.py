@@ -1,4 +1,4 @@
-#!/usr/bin/env -S  python  #
+#!/opt/anaconda3/envs/mne/bin/python3 -S  python  #
 # -*- coding: utf-8 -*-
 # ===============================================================================
 # Author: Dr. Samuel Louviot, PhD
@@ -31,17 +31,16 @@ the homemade pipelines (called here CBIN-CLEANER). Once this first step is done,
 the data can be further cleaned by either using ASR and/or PyPrep algorithms.
 """
 
-import functools
 import os
 import shutil
 from pathlib import Path
-from typing import Any
 
 import asrpy
 import bids
 import mne
 import numpy as np
 import pyprep
+from decorators import pipe
 from eeg_fmri_cleaning.main import clean_bcg, clean_gradient
 from eeg_fmri_cleaning.utils import read_raw_eeg
 
@@ -53,9 +52,13 @@ def write_report(message: str, filename: str | os.PathLike) -> None:
         message (str): The message to append.
         filename (str | os.PathLike): The file to append the message.
     """
-    with open(filename, "a") as f:
-        f.write(message)
-        f.write("\n")
+    if isinstance(filename, os.PathLike) or isinstance(filename, str):
+        with open(filename, "a") as f:
+            f.write(message)
+            f.write("\n")
+    else:
+        raise ValueError("The filename must be a string or a Path object.")
+
 
 class CleanerPipelines:
     """Class to clean the EEG data using different algorithms."""
@@ -65,9 +68,12 @@ class CleanerPipelines:
         self.rawdata_path = Path(BIDSFile.path)
         self.process_history = []
 
-    def _read_raw(self: "CleanerPipelines") -> "CleanerPipelines":
+    def read_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Read the raw EEG data using MNE."""
-        self.raw = read_raw_eeg(self.BIDSFile.path)
+        try:
+            self.raw = read_raw_eeg(self.BIDSFile.path)
+        except Exception as e:
+            print(f"Error while reading the raw data: {e}")
         return self
 
     def _make_derivatives_saving_path(
@@ -110,22 +116,25 @@ class CleanerPipelines:
         self.raw.save(self.derivatives_path)
         return self
 
-    def _clean_gradient(self: "CleanerPipelines") -> "CleanerPipelines":
+    @pipe
+    def clean_gradient(self: "CleanerPipelines") -> "CleanerPipelines":
         """Clean the gradient artifacts from the EEG data."""
         self.raw = clean_gradient(self.raw)
         self.process_history.append("GRAD")
         return self
 
-    def _clean_bcg(self: "CleanerPipelines") -> "CleanerPipelines":
+    @pipe
+    def clean_bcg(self: "CleanerPipelines") -> "CleanerPipelines":
         """Clean the BCG artifacts from the EEG data."""
         self.raw = clean_bcg(self.raw)
         self.process_history.append("BCG")
         return self
 
     def _task_is(self, task_name: str) -> bool:
-        self.BIDSFile.get_entities()["task"] == task_name
+        return self.BIDSFile.get_entities()["task"] == task_name
 
-    def _run_pyprep(self: "CleanerPipelines") -> "CleanerPipelines":
+    @pipe
+    def run_pyprep(self: "CleanerPipelines") -> "CleanerPipelines":
         """Clean the EEG data using the PyPrep algorithm.
 
         Args:
@@ -147,7 +156,8 @@ class CleanerPipelines:
         self.process_history.append("PREP")
         return self
 
-    def _run_asr(self) -> mne.io.Raw:
+    @pipe
+    def run_asr(self) -> mne.io.Raw:
         """Clean the EEG data using the ASR algorithm.
 
         Args:
@@ -161,46 +171,3 @@ class CleanerPipelines:
         self.raw = asr.transform(self.raw)
         self.process_history.append("ASR")
         return self
-
-    def pipe(self: 'CleanerPipelines', func):  # noqa: ANN001
-        """Decorator that pipes to the folder creation and saving methods.
-
-        Args:
-            func (_type_):
-
-        Returns:
-            _type_: _description_
-        """
-        @functools.wraps(func)
-        def wrapper_decorator(*args: tuple, 
-                              **kwargs: dict[str, Any]) -> None:  # noqa: ANN002
-            func(*args, **kwargs)
-            self._make_derivatives_saving_path()
-            self._save_raw()
-            self._copy_sidecar()
-        return wrapper_decorator
-
-    @pipe
-    def run_gradient_removal(self: "CleanerPipelines") -> "CleanerPipelines":
-        """Run the pipeline to clean the gradient artifacts."""
-        self._clean_gradient()
-        return self
-    
-    @pipe
-    def run_cbin_pipeline(self: "CleanerPipelines") -> "CleanerPipelines":
-        """Run the pipeline to clean the EEG data using the CBIN algorithm."""
-        self._run_cbin_cleaner()
-        return self
-    
-    @pipe
-    def run_asr_pipeline(self: "CleanerPipelines") -> "CleanerPipelines":
-        """Run the pipeline to clean the EEG data using the ASR algorithm."""
-        self._run_asr()
-        return self
-    
-    @pipe
-    def run_prep_pipeline(self: "CleanerPipelines") -> "CleanerPipelines":
-        """Run the pipeline to clean the EEG data using the PyPrep algorithm."""
-        self._run_pyprep()
-        return self
-
