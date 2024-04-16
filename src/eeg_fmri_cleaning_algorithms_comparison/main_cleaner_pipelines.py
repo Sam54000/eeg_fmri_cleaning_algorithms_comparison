@@ -27,18 +27,18 @@ import argparse
 
 import bids
 
-from .cleaner_pipelines import CleanerPipeline
+from cleaner_pipelines import CleanerPipelines
 
 
 args = argparse.ArgumentParser(description="Run the CBIN-CLEANER pipeline on EEG data.")
-args.add_argument("subject", 
+args.add_argument("--subject", 
                   type=str,
                   help="The subject to process.",
                   required=True)
 
 input_args = args.parse_args()
-def run_cbin_cleaner(filename: str | os.PathLike) -> None:  # noqa: D103
-    cleaner = CleanerPipeline(filename)
+def run_cbin_cleaner(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
+    cleaner = CleanerPipelines(BIDSFile)
     cleaner.read_raw()
     if cleaner._task_is("checker"):
         cleaner.clean_gradient().clean_bcg()
@@ -46,30 +46,33 @@ def run_cbin_cleaner(filename: str | os.PathLike) -> None:  # noqa: D103
         cleaner.clean_bcg()
     return cleaner
 
-def run_cbin_cleaner_asr(filename: str | os.PathLike) -> None:  # noqa: D103
-    cleaner = run_cbin_cleaner(filename)
+def run_cbin_cleaner_asr(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
+    cleaner = run_cbin_cleaner(BIDSFile)
     cleaner.run_asr()
 
-def run_cbin_cleaner_pyprep_asr(filename: str | os.PathLike) -> None:  # noqa: D103
-    cleaner = run_cbin_cleaner(filename)
+def run_cbin_cleaner_pyprep_asr(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
+    cleaner = run_cbin_cleaner(BIDSFile)
     cleaner.run_pyprep()
     cleaner.run_asr()
     
-def main(**kwargs):
+def main(kwargs):
     data_path = "/projects/EEG_FMRI/bids_eeg/BIDS/NEW/RAW"
 
 
     layout = bids.BIDSLayout(data_path)
     file_list = layout.get(
+        extension=".set",
         **kwargs,
-        extension=".set")
+        )
 
-    for filename, BIDSFile_object in file_list.items():
-        if BIDSFile_object.task is any("checker", "checkeroff"):
+    for BIDSFile_object in file_list:
+        if any([BIDSFile_object.task == "checker",
+                BIDSFile_object.task == "checkeroff"]):
             for pipeline_function in [run_cbin_cleaner, 
                                     run_cbin_cleaner_asr, 
                                     run_cbin_cleaner_pyprep_asr]:
-                pipeline_function(filename)
+                pipeline_function(BIDSFile_object)
     
 if __name__ == "__main__":
-    main(input_args)
+    print(input_args)
+    main(input_args.__dict__)

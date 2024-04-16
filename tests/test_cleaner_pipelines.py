@@ -23,6 +23,7 @@ class TestWriteReport:
             # Check that the file was created and contains the correct message
             assert os.path.exists(file_path)
             with open(file_path, "r") as file:
+                line = file.read()
                 assert file.read() == message
 
     # The filename argument is None. The test function has been fixed to provide a filename argument when calling 'write_report' function.
@@ -36,15 +37,34 @@ class TestWriteReport:
         # Generates a path to save cleaned files in BIDS format with correct initialization
     def test_generates_path_with_correct_initialization(self):
         # Initialize the class object
-        bids_file = bids.layout.models.BIDSFile(entity_dict={'path': '/path/to/rawdata'})
-        cleaner = cp(bids_file)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            init_dir = os.path.join(temp_dir, 'BIDS')
+            bids_file = bids.layout.models.BIDSFile(
+                entity_dict={
+                    'path': os.path.join(
+                        init_dir,
+                        'RAW',
+                        'sub-01',
+                        'ses-01',
+                        'eeg',
+                        'sub-01_ses-01_task-checkeroff_run-01_eeg.set'
+                    )
+                    }
+                )
+            cleaner = cp(bids_file)
+            cleaner.process_history = 'GRAD'
+            # Invoke the method
+            cleaner._make_derivatives_saving_path()
 
-        # Invoke the method
-        cleaner._make_derivatives_saving_path()
-
-        # Check if the derivatives path is created
-        assert cleaner.derivatives_path.exists()
-
-        # Check if the derivatives path is correct
-        expected_path = Path("/path/to/DERIVATIVES")
-        assert cleaner.derivatives_path == expected_path
+            # Check if the derivatives path is created
+            expected_path = Path(
+                os.path.join(
+                    init_dir,
+                    'DERIVATIVES/GRAD',
+                    'sub-01',
+                    'ses-01',
+                    'eeg'
+                )
+            )
+            assert os.path.isdir(cleaner.derivatives_path)
+            assert cleaner.derivatives_path == expected_path

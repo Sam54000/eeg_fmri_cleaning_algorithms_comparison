@@ -92,10 +92,10 @@ class CleanerPipelines:
         rawdata_dirname = [name for name in path_parts if "raw" in name.lower()][0]
         path_parts[path_parts.index(rawdata_dirname)] = "DERIVATIVES"
         added_folder = "_".join(self.process_history)
-        if added_folder:
-            path_parts.insert(path_parts.index("DERIVATIVES") + 1, added_folder)
+        path_parts.insert(path_parts.index("DERIVATIVES") + 1, added_folder)
             
-        self.derivatives_path = Path(*path_parts)
+        filename = Path(*path_parts)
+        self.derivatives_path = filename.parent
         self.derivatives_path.mkdir(parents=True, exist_ok=True)
         return self
 
@@ -113,7 +113,8 @@ class CleanerPipelines:
 
     def _save_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Save the cleaned raw EEG data in the BIDS format."""
-        self.raw.save(self.derivatives_path)
+        saving_filename = os.path.splitext(self.BIDSFile.path)[0] + ".fif"
+        self.raw.save(saving_filename, overwrite=True)
         return self
 
     @pipe
