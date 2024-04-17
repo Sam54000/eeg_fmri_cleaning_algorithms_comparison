@@ -7,7 +7,11 @@ license = "LGPL-3.0"
 readme = "README.md"
 package-mode = true
 packages = [
-  {include = "cleaner_pipelines.py", from = "src/eeg_fmri_cleaning_algorithms_comparison"}
+  {include = "cleaner_pipelines.py", from = "src/eeg_fmri_cleaning_algorithms_comparison"},
+  {include = "main_cleaner_pipelines.py", from = "src/eeg_fmri_cleaning_algorithms_comparison"},
+  {include = "decorators.py", from = "utils"},
+  {include = "simulated_data.py", from = "utils"},
+  {include = "path_handler.py", from = "utils"},
             ]
 
 [tool.poetry.dependencies]

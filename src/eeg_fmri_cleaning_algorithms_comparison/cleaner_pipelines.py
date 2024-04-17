@@ -43,6 +43,7 @@ import pyprep
 from decorators import pipe
 from eeg_fmri_cleaning.main import clean_bcg, clean_gradient
 from eeg_fmri_cleaning.utils import read_raw_eeg
+from simulated_data import simulate_eeg_data
 
 
 def write_report(message: str, filename: str | os.PathLike) -> None:
@@ -62,11 +63,11 @@ def write_report(message: str, filename: str | os.PathLike) -> None:
 
 class CleanerPipelines:
     """Class to clean the EEG data using different algorithms."""
-    def __init__(self, BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D107
+    def __init__(self, BIDSFile: bids.layout.BIDSFile) -> None:  # noqa: D107
         self.BIDSFile = BIDSFile
         self.entities = BIDSFile.get_entities()
         self.rawdata_path = Path(BIDSFile.path)
-        self.process_history = []
+        self.process_history = list()
 
     def read_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Read the raw EEG data using MNE."""
@@ -91,7 +92,10 @@ class CleanerPipelines:
         path_parts = list(reading_path.parts)
         rawdata_dirname = [name for name in path_parts if "raw" in name.lower()][0]
         path_parts[path_parts.index(rawdata_dirname)] = "DERIVATIVES"
-        added_folder = "_".join(self.process_history)
+        if len(self.process_history) > 1:
+            added_folder = "_".join(self.process_history)
+        else:
+            added_folder = self.process_history[0]
         path_parts.insert(path_parts.index("DERIVATIVES") + 1, added_folder)
             
         filename = Path(*path_parts)
@@ -172,3 +176,10 @@ class CleanerPipelines:
         self.raw = asr.transform(self.raw)
         self.process_history.append("ASR")
         return self
+    
+    @pipe
+    def function_testing_decorator(self) -> None:
+        """A function to test the decorator."""
+        print("This is a test function.")
+        self.raw = simulate_eeg_data()
+        self.process_history.append("TEST")
