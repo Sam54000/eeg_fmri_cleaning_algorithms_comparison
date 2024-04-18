@@ -133,7 +133,7 @@ class DummyDataset:
             ignore_index=True
         )
     
-    def create_participants_metadata(self) -> None:
+    def create_participant_metadata(self) -> None:
         holder = {
             "participant_id": [],
             "sex": [],
@@ -357,8 +357,8 @@ class DummyDataset:
 
         for subject_number in range(1, self.n_subjects + 1):
             arguments = ['subject', subject_number]
-            participant_id = self._generate_label(*arguments)
             self.subject_path = self._generate_folder_path(*arguments)
+            participant_id = self._generate_label(*arguments)
 
             for session_number in range(1, self.n_sessions + 1):
                 arguments = ['session', session_number]

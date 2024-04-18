@@ -133,7 +133,7 @@ class DummyDataset:
             ignore_index=True
         )
     
-    def create_participants_metadata(self) -> None:
+    def create_participant_metadata(self) -> None:
         holder = {
             "participant_id": [],
             "sex": [],
@@ -353,12 +353,24 @@ class DummyDataset:
         # Define the necessary BIDS files for dataset description
         self._create_bids_folder()
         self._create_dataset_description()
-        self.create_participants_metadata()
+        self._create_participants_metadata()
 
         for subject_number in range(1, self.n_subjects + 1):
+            random_age = np.random.randint(18, 60)
+            random_sex = np.random.choice(['M', 'F'])
+            random_handedness = np.random.choice(['right', 'left', 'ambidextrous'])
             arguments = ['subject', subject_number]
-            participant_id = self._generate_label(*arguments)
+            
             self.subject_path = self._generate_folder_path(*arguments)
+            
+            participant_id = self._generate_label(*arguments)
+            
+            self._add_participant_metadata(
+                participant_id = participant_id,
+                age = random_age,
+                sex = random_sex,
+                handedness = random_handedness
+                )
 
             for session_number in range(1, self.n_sessions + 1):
                 arguments = ['session', session_number]

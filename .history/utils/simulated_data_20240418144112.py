@@ -133,7 +133,7 @@ class DummyDataset:
             ignore_index=True
         )
     
-    def create_participants_metadata(self) -> None:
+    def create_participant_metadata(self) -> None:
         holder = {
             "participant_id": [],
             "sex": [],

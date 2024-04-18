@@ -128,6 +128,7 @@ class DummyDataset:
             index=[0]
         )
 
+        
         self.participant_metadata = pd.concat(
             [self.participant_metadata, temp_df],
             ignore_index=True
