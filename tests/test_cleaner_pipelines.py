@@ -14,10 +14,11 @@ import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
 @pytest.fixture
 def temp_bids_files() -> Generator[Any, Any, Any]:
     dataset_object = simulated_data.DummyDataset()
-    eeg_dataset = dataset_object.create_eeg_dataset()
-    bids_path = Path(eeg_dataset.bids_path)
+    dataset_object.create_eeg_dataset()
+    bids_path = dataset_object.bids_path
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.vhdr')
+    print(bids_files)
     temp_dataset = {'bids_files': bids_files, 'bids_path': bids_path}
     yield temp_dataset
     dataset_object.flush(check=False)

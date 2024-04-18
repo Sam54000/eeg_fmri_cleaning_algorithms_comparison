@@ -10,10 +10,6 @@ from path_handler import DirectoryTree
 import pandas as pd
 
 
-def get_var_name(var):
-    for name, value in locals().items():
-        if value is var:
-            return name
 def simulate_eeg_data(
     n_channels: int = 32,
     duration_seconds: int = 2,
@@ -53,6 +49,8 @@ class DummyDataset:
                  n_subjects: int = 1, 
                  n_sessions: int = 1, 
                  n_runs: int = 1,
+                 sessions_label_str = None,
+                 subjects_label_str = None,
                  data_folder: str = "RAW",
                  root: str | os.PathLike = None) -> None:
         """Initialize the DummyDataset object.
@@ -75,10 +73,8 @@ class DummyDataset:
                  temporary directory of the system. Defaults to None.
         """
         arguments_to_check = [n_subjects, n_sessions, n_runs]
-        arguments_name = [
-            get_var_name(argument) 
-            for argument in arguments_to_check
-        ]
+        arguments_name = ['subjects', 'sessions', 'runs']
+        print(arguments_name)
         conditions = [
             not isinstance(argument, int) or argument < 1
             for argument in arguments_to_check
@@ -101,11 +97,14 @@ class DummyDataset:
         self.n_sessions = n_sessions
         self.n_runs = n_runs
         self.data_folder = data_folder
-        self.bids_path = None
+        self.sessions_label_str = sessions_label_str
+        self.subjects_label_str = subjects_label_str
         if root:
             self.root = Path(root)
         else:
             self.root = Path(tempfile.mkdtemp())
+        
+        self.bids_path = self.root.joinpath(self.data_folder)
     
     def _add_participant_metadata(
         self, 
@@ -154,29 +153,14 @@ class DummyDataset:
         return self
     
     def _save_participant_metadata(self) -> None:
+        saving_filename = self.bids_path.joinpath("participants.tsv")
         self.participant_metadata.to_csv(
-            os.path.join(self.bids_path, "participants.tsv"),
+            saving_filename,
             sep="\t",
             index=False
         )
                                   
         
-    def _create_bids_folder(self: 'DummyDataset') -> 'DummyDataset':
-        """Create a BIDS compliant starting folder structure.
-        
-        The root path created is the system's temporary directory or an
-        arbitrary path defined by the user. To make it BIDS compliant, it needs
-        to have a 'source' and/or a 'rawdata' and/or a 'derivatives' folder. This
-        method creates the bids_path attribute which is a path compliant with 
-        the BIDS standard.
-
-        Returns:
-            DummyDataset
-        """
-        self.bids_path = self.root.joinpath(self.data_folder)
-        self.bids_path.mkdir(parents=True, exist_ok=True)
-        return self
-    
     def _generate_label(
         self: 'DummyDataset',
         label_type: str = 'subject',
@@ -212,11 +196,7 @@ class DummyDataset:
         label = f"{label_prefix}{label_str_id}{label_number:03d}"
         return label
         
-    def _generate_folder_path(self: 'DummyDataset',
-                        folder_type: str,
-                        folder_number: int = 1,
-                        folder_str_id: str = None,
-                        zero_padding: int = 2) -> Path:
+    def create_modality_agnostic_dir(self: 'DummyDataset') -> list[Path]:
         """Create multiple BIDS compliant folders.
         
         The BIDS structure requires the structure to be an iterative
@@ -245,22 +225,29 @@ class DummyDataset:
         Returns:
             Path: The path of the folder created
         """
-        if folder_type == 'subject':
-            parent_path = self.bids_path
-        elif folder_type == 'session':
-            parent_path = self.subject_path
-        else:
-            raise ValueError(f"Invalid folder type: {folder_type}")
+        path_list = list()
         
-        for folder_id in range(1, folder_number + 1):
-            folder_label = self._generate_label(
-                label_type = folder_type,
-                label_number = folder_id,
-                label_str_id = folder_str_id,
+        for subject_number in range(1, self.n_subject+ 1):
+            subject_folder_label = self._generate_label(
+                label_type = 'subject',
+                label_number = subject_number,
+                label_str_id=self.subjects_label_str
             )
-            folder_path = parent_path.joinpath(folder_label)
             
-        return folder_path
+            for session_number in range(1, self.n_sessions + 1):
+                session_folder_label = self._generate_label(
+                    label_type = 'session',
+                    label_number = session_number,
+                    label_str_id=self.sessions_label_str
+                )
+                path = self.bids_path.joinpath(
+                    subject_folder_label, 
+                    session_folder_label
+                )
+                path_list.append(path)
+                path.mkdir(parents=True, exist_ok=True)
+        
+        return path_list
     def _create_sidecar_json(self, 
                              eeg_filename: str | os.PathLike) -> None:
         """Create a sidecar JSON file for the EEG data.
@@ -354,52 +341,44 @@ class DummyDataset:
         self._create_bids_folder()
         self._create_dataset_description()
         self.create_participants_metadata()
+        path_list = self.create_modality_agnostic_dir()
+         
+        for path in path_list:
+            for run_number in range(1, self.n_runs + 1):
+                run_label = self._generate_label('run', run_number)
+                eeg_directory = self.path.joinpath('eeg')
+                eeg_directory.mkdir(parents=True, exist_ok=True)
 
-        for subject_number in range(1, self.n_subjects + 1):
-            arguments = ['subject', subject_number]
-            participant_id = self._generate_label(*arguments)
-            self.subject_path = self._generate_folder_path(*arguments)
+                # Define file names for EEG data files
+                if fmt == 'brainvision':
+                    extension = '.vhdr'
+                elif fmt == 'edf':
+                    extension = '.edf'
+                elif fmt == 'eeglab':
+                    extension = '.set'
+                elif fmt == 'fif':
+                    extension = '.fif'
+                    
+                base_eeg_filename = "_".join([
+                    participant_id,
+                    session_label,
+                    run_label,
+                    'task-test',
+                    'eeg'
+                ])
 
-            for session_number in range(1, self.n_sessions + 1):
-                arguments = ['session', session_number]
-                session_label = self._generate_label(*arguments)
-                self.session_path = self._generate_folder_path(*arguments)
-                
-                for run_number in range(1, self.n_runs + 1):
-                    run_label = self._generate_label('run', run_number)
-                    eeg_directory = self.session_path.joinpath('eeg')
-                    eeg_directory.mkdir(parents=True, exist_ok=True)
+                eeg_filename = base_eeg_filename + extension
+                eeg_absolute_filename = eeg_directory.joinpath(eeg_filename)
 
-                    # Define file names for EEG data files
-                    if fmt == 'brainvision':
-                        extension = '.vhdr'
-                    elif fmt == 'edf':
-                        extension = '.edf'
-                    elif fmt == 'eeglab':
-                        extension = '.set'
-                    elif fmt == 'fif':
-                        extension = '.fif'
-                        
-                    base_eeg_filename = "_".join([
-                        participant_id,
-                        session_label,
-                        run_label,
-                        'task-test',
-                        'eeg'
-                    ])
+                raw = simulate_eeg_data()
+                mne.export.export_raw(
+                    fname = eeg_absolute_filename,
+                    raw=raw,
+                    fmt=fmt,
+                )
 
-                    eeg_filename = base_eeg_filename + extension
-                    eeg_absolute_filename = eeg_directory.joinpath(eeg_filename)
-
-                    raw = simulate_eeg_data()
-                    mne.export.export_raw(
-                        fname = eeg_absolute_filename,
-                        raw=raw,
-                        fmt=fmt,
-                    )
-
-                    # Create sidecar JSON file
-                    self._create_sidecar_json(eeg_filename)
+                # Create sidecar JSON file
+                self._create_sidecar_json(eeg_filename)
 
 
         self._save_participant_metadata()

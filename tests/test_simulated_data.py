@@ -3,16 +3,12 @@
 import mne
 import pytest
 import pandas as pd
+from pathlib import Path
 from simulated_data import simulate_eeg_data, DummyDataset
 
 @pytest.fixture
 def raw_data():
     return simulate_eeg_data()
-
-@pytest.fixture
-def dummy_dataset():
-    dataset = DummyDataset()
-    return dataset
     
 def test_returns_instance_of_rawarray():
     result = simulate_eeg_data()
@@ -32,7 +28,7 @@ def test_dummy_dataset_called_with_zeros():
         
 def test_participant_metadata():
     dataset = DummyDataset(n_subjects = 5)
-    dataset.create_participant_metadata()
+    dataset.create_participants_metadata()
     assert isinstance(dataset.participant_metadata, pd.DataFrame)
     assert dataset.participant_metadata.shape[0] == 5
     nan_mask = dataset.participant_metadata.isna()
@@ -41,7 +37,7 @@ def test_participant_metadata():
 
 def test_add_participant_metadata():
     dataset = DummyDataset(n_subjects = 5)
-    dataset.create_participant_metadata()
+    dataset.create_participants_metadata()
     dataset._add_participant_metadata(
         participant_id = 'sub-06',
         age = 26,
@@ -54,8 +50,8 @@ def test_add_participant_metadata():
     for column in dataset.participant_metadata.columns:
         assert not any(nan_mask[column].values)
 
-def test_generate_label(dummy_dataset):
-    dataset = dummy_dataset['dataset']
+def test_generate_label():
+    dataset = DummyDataset(root = './')
     for i in range(1,12):
         labels = dataset._generate_label('subject', i, 'TEST')
         assert labels == f'sub-TEST{i:03d}'
@@ -66,14 +62,10 @@ def test_generate_label(dummy_dataset):
     labels = dataset._generate_label('run', 1)
     assert labels == 'run-001'
     
-def test_generate_folder_path(dummy_dataset):
-    dataset = DummyDataset(root = './')
+def test_generate_folder_path():
+    dataset = DummyDataset(root = '.')
     path = dataset._generate_folder_path('subject', 1)
-    assert path == './sub-001'
+    assert isinstance(path, Path)
+    assert path == Path('RAW/sub-001')
     path = dataset._generate_folder_path('session', 1)
-    assert path == './sub001/ses-001'
-
-
-
-
-    
+    assert path == Path('RAW/sub001/ses-001')
