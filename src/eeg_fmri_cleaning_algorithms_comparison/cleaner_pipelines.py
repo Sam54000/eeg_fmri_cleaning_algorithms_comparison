@@ -88,7 +88,7 @@ class CleanerPipelines:
             added_folder (str, optional): The folder to be added after the 
                                           derivatives one.
         """
-        reading_path = Path(self.BIDSFile.path)
+        reading_path = Path(self.rawdata_path)
         path_parts = list(reading_path.parts)
         rawdata_dirname = [name for name in path_parts if "raw" in name.lower()][0]
         path_parts[path_parts.index(rawdata_dirname)] = "DERIVATIVES"
@@ -110,15 +110,32 @@ class CleanerPipelines:
             BIDSFile (bids.layout.models.BIDSFile): The BIDSFile object.
             where_to_copy (str | os.PathLike): The folder to copy the sidecar file.
         """
-        filename_base, _ = os.path.splitext(self.BIDSFile.path)
-        sidecar_filename = filename_base + ".json"
-        if os.path.isfile(sidecar_filename):
-            shutil.copyfile(sidecar_filename, self.derivatives_path)
+        base_filename, _ = os.path.splitext(self.BIDSFile.filename)
+        source_sidecar_path = Path(self.rawdata_path).parent
+        json_filename = base_filename+ ".json"
+
+        source_sidecar_filename = os.path.join(
+            source_sidecar_path, 
+            json_filename
+            )
+
+        destination_sidecar_filename = os.path.join(
+            self.derivatives_path, 
+            json_filename
+        )
+
+        if os.path.isfile(source_sidecar_filename):
+            shutil.copyfile(source_sidecar_filename,
+                            destination_sidecar_filename)
 
     def _save_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Save the cleaned raw EEG data in the BIDS format."""
-        saving_filename = os.path.splitext(self.BIDSFile.path)[0] + ".fif"
-        self.raw.save(saving_filename, overwrite=True)
+
+        saving_path = self.derivatives_path
+        base_filename, _ = os.path.splitext(self.BIDSFile.filename)
+        saving_filename = base_filename + ".fif"
+        destination_filename = os.path.join(saving_path, saving_filename)
+        self.raw.save(destination_filename, overwrite=True)
         return self
 
     @pipe
@@ -182,4 +199,4 @@ class CleanerPipelines:
         """A function to test the decorator."""
         print("This is a test function.")
         self.raw = simulate_eeg_data()
-        self.process_history.append("TEST")
+        self.process_history.append("TEST_PIPE")

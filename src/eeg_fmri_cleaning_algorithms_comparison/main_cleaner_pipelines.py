@@ -23,17 +23,22 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ===============================================================================
 import os
+from pathlib import Path
 import argparse
 
 import bids
 
-from cleaner_pipelines import CleanerPipelines
+from cleaner_pipelines import write_report, CleanerPipelines
 
 
 args = argparse.ArgumentParser(description="Run the CBIN-CLEANER pipeline on EEG data.")
 args.add_argument("--subject", 
                   type=str,
                   help="The subject to process.",
+                  required=True)
+args.add_argument("--rawpath",
+                  type=str,
+                  help="The path to the raw data.",
                   required=True)
 
 input_args = args.parse_args()
@@ -56,10 +61,13 @@ def run_cbin_cleaner_pyprep_asr(BIDSFile: bids.layout.models.BIDSFile) -> None: 
     cleaner.run_asr()
     
 def main(kwargs):
-    data_path = "/projects/EEG_FMRI/bids_eeg/BIDS/NEW/RAW"
+   
+    raw_data_path = Path(kwargs['rawpath'])
+    root = raw_data_path.parent
+    derivatives_path = root / "DERIVATIVES"
 
 
-    layout = bids.BIDSLayout(data_path)
+    layout = bids.BIDSLayout(raw_data_path)
     file_list = layout.get(
         extension=".set",
         **kwargs,
@@ -71,7 +79,14 @@ def main(kwargs):
             for pipeline_function in [run_cbin_cleaner, 
                                     run_cbin_cleaner_asr, 
                                     run_cbin_cleaner_pyprep_asr]:
-                pipeline_function(BIDSFile_object)
+                try:
+                    pipeline_function(BIDSFile_object)
+                except Exception as e:
+                    message = f"""filename: {BIDSFile_object}
+                    process:{pipeline_function.__name__}
+                    error:{e}
+                    """
+                    write_report(derivatives_path, message)
     
 if __name__ == "__main__":
     print(input_args)
