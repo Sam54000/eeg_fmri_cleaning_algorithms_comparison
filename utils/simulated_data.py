@@ -248,6 +248,23 @@ class DummyDataset:
                 path.mkdir(parents=True, exist_ok=True)
         
         return path_list
+    def _extract_entities_from_path(self, path: str | os.PathLike) -> str:
+        """Extract the entities from a path.
+
+        Args:
+            path (str | os.PathLike): The path to extract the label from.
+
+        Returns:
+            str: The extracted label.
+        """
+        path = Path(path)
+        parts = path.parts
+        entities = {
+            'subject': [part for part in parts if 'sub-' in part][0],
+            'session': [part for part in parts if 'ses-' in part][0],
+        }
+
+        return entities
     def _create_sidecar_json(self, 
                              eeg_filename: str | os.PathLike) -> None:
         """Create a sidecar JSON file for the EEG data.
@@ -359,15 +376,17 @@ class DummyDataset:
                 elif fmt == 'fif':
                     extension = '.fif'
                     
-                base_eeg_filename = "_".join([
-                    participant_id,
-                    session_label,
+                entities = self._extract_entities_from_path(path)
+
+                eeg_filename = "_".join([
+                    entities['subject'],
+                    entities['session'],
                     run_label,
                     'task-test',
-                    'eeg'
+                    'eeg',
+                    extension
                 ])
 
-                eeg_filename = base_eeg_filename + extension
                 eeg_absolute_filename = eeg_directory.joinpath(eeg_filename)
 
                 raw = simulate_eeg_data()
