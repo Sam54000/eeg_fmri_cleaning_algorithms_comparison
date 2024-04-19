@@ -26,6 +26,8 @@ ruff = "^0.3.0"
 pybids = "^0.13.0"
 pybv = "^0.7.0"
 mne = "^0.24.0"
+asrpy = "^0.0.3"
+pyprep = "^0.4.0"
 
 [tool.poetry.group.docs.dependencies]
 pdoc = "^14.4.0"
