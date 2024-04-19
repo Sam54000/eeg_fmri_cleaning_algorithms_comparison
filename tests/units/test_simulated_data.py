@@ -72,7 +72,11 @@ def test_generate_label():
 def test_create_modality_agnostic_dir(testing_path):
     dataset = DummyDataset(root = testing_path)
     path = dataset.create_modality_agnostic_dir()
-    asserting_path = testing_path.joinpath('RAW', 'sub-001', 'ses-001')
+    for content in testing_path.iterdir():
+        if 'temporary_directory_generated_' in content.name:
+            temporary_directory = content
+            break
+    asserting_path = temporary_directory.joinpath('RAW', 'sub-001', 'ses-001')
     assert isinstance(path[0], Path)
     assert str(path[0]) == str(asserting_path)
 
@@ -99,7 +103,16 @@ def test_create_sidecar_json(testing_path):
 def test_eeg_dataset(testing_path):
     dataset = DummyDataset(root = testing_path)
     dataset.create_eeg_dataset()
-    asserting_path = testing_path.joinpath('RAW', 'sub-001', 'ses-001', 'eeg')
+    for content in testing_path.iterdir():
+        if 'temporary_directory_generated_' in content.name:
+            temporary_directory = content
+            break
+    asserting_path = temporary_directory.joinpath(
+        'RAW', 
+        'sub-001', 
+        'ses-001', 
+        'eeg'
+        )
     eeg_filenames = ['sub-001_ses-001_task-test_run-001_eeg.vhdr',
                      'sub-001_ses-001_task-test_run-001_eeg.vmrk',
                      'sub-001_ses-001_task-test_run-001_eeg.eeg',
@@ -122,10 +135,37 @@ def test_eeg_dataset_annotations(testing_path):
         )
     )
 
-    testing_path = testing_path.joinpath('RAW', 'sub-001', 'ses-001', 'eeg')
+    for content in testing_path.iterdir():
+        if 'temporary_directory_generated_' in content.name:
+            temporary_directory = content
+            break
+        
     testing_eeg_name = 'sub-001_ses-001_task-test_run-001_eeg.set'
-    filename = testing_path.joinpath(testing_eeg_name)
+    filename = temporary_directory.joinpath(
+        'RAW',
+        'sub-001',
+        'ses-001',
+        'eeg',
+        testing_eeg_name)
     raw = mne.io.read_raw_eeglab(filename)
     annotations = raw.annotations
     assert len(annotations.onset) == 3
     assert annotations.description[0] == 'testing_event'    
+
+def test_populate_label():
+    dataset = DummyDataset(n_subjects = 2,
+                           n_sessions = 3,
+                           n_runs = 4,
+                           root = './tests/outputs')
+    dataset._populate_labels()
+    asserting_subject = ['sub-001', 'sub-002']
+    asserting_session = ['ses-001', 'ses-002', 'ses-003']
+    asserting_run = ['run-001', 'run-002', 'run-003', 'run-004']
+    assertion_list = [asserting_subject, asserting_session, asserting_run]
+    attributes_list = ['subjects', 'sessions', 'runs']
+    for attribute, assertion in zip(attributes_list, assertion_list):
+        attribute_values = getattr(dataset, attribute)
+        print(attribute_values)
+        for i, asserting_label in enumerate(assertion):
+            assert  attribute_values[i] == asserting_label
+    

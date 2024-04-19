@@ -31,20 +31,10 @@ import bids
 from cleaner_pipelines import write_report, CleanerPipelines
 
 
-args = argparse.ArgumentParser(description="Run the CBIN-CLEANER pipeline on EEG data.")
-args.add_argument("--subject", 
-                  type=str,
-                  help="The subject to process.",
-                  required=True)
-args.add_argument("--rawpath",
-                  type=str,
-                  help="The path to the raw data.",
-                  required=True)
-
-input_args = args.parse_args()
 def run_cbin_cleaner(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
     cleaner = CleanerPipelines(BIDSFile)
     cleaner.read_raw()
+    print(cleaner.)
     if cleaner._task_is("checker"):
         cleaner.clean_gradient().clean_bcg()
     elif cleaner._task_is("checkeroff"):
@@ -60,17 +50,16 @@ def run_cbin_cleaner_pyprep_asr(BIDSFile: bids.layout.models.BIDSFile) -> None: 
     cleaner.run_pyprep()
     cleaner.run_asr()
     
-def main(kwargs):
+def main(reading_path):
    
-    raw_data_path = Path(kwargs['rawpath'])
-    root = raw_data_path.parent
-    derivatives_path = root / "DERIVATIVES"
+    root = reading_path.parent
+    derivatives_path = root.joinpath('DERIVATIVES')
+    report_filename = derivatives_path.joinpath('report.txt')
 
 
-    layout = bids.BIDSLayout(raw_data_path)
+    layout = bids.BIDSLayout(reading_path)
     file_list = layout.get(
         extension=".set",
-        **kwargs,
         )
 
     for BIDSFile_object in file_list:
@@ -82,12 +71,8 @@ def main(kwargs):
                 try:
                     pipeline_function(BIDSFile_object)
                 except Exception as e:
-                    message = f"""filename: {BIDSFile_object}
+                    message = f"""filename: {BIDSFile_object.filename}
                     process:{pipeline_function.__name__}
                     error:{e}
                     """
-                    write_report(derivatives_path, message)
-    
-if __name__ == "__main__":
-    print(input_args)
-    main(input_args.__dict__)
+                    write_report(report_filename, message)

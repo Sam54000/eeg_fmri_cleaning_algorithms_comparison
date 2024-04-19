@@ -54,6 +54,7 @@ def write_report(message: str, filename: str | os.PathLike) -> None:
         filename (str | os.PathLike): The file to append the message.
     """
     if isinstance(filename, os.PathLike) or isinstance(filename, str):
+        print(f"filename: {filename}")
         with open(filename, "a") as f:
             f.write(message)
             f.write("\n")

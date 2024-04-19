@@ -12,6 +12,7 @@ from mne import create_info
 from mne.io import RawArray
 from path_handler import DirectoryTree
 
+# TODO: refactor the eeg dataset generation with the newly populate labels method
 
 def simulate_eeg_data(
     n_channels: int = 16,
@@ -87,11 +88,11 @@ class DummyDataset:
         n_subjects: int = 1, 
         n_sessions: int = 1, 
         n_runs: int = 1,
+        task: Optional[str] = 'test',
         sessions_label_str: Optional[str] = None,
         subjects_label_str: Optional[str] = None,
         data_folder: str = "RAW",
         root: Optional[Union[str, os.PathLike]] = None,
-        testing: bool = True
     ) -> None:
         """Initialize the DummyDataset object.
 
@@ -102,6 +103,7 @@ class DummyDataset:
                 Defaults to 1.
             n_runs (int, optional): The number of runs to simulate. 
                 Defaults to 1.
+            task (str, optional): The task to simulate. Defaults to 'test'.
             sessions_label_str (str, optional): The string identifier to add to 
                 the session label. Defaults to None.
             subjects_label_str (str, optional): The string identifier to add to 
@@ -137,23 +139,18 @@ class DummyDataset:
         
         self.n_subjects = n_subjects
         self.n_sessions = n_sessions
-        self.subjects = [f"sub-{i:03d}" for i in range(1, n_subjects + 1)]
-        self.sessions = [f"ses-{i:03d}" for i in range(1, n_sessions + 1)]
         self.n_runs = n_runs
         self.data_folder = data_folder
         self.sessions_label_str = sessions_label_str
         self.subjects_label_str = subjects_label_str
-        if testing and root:
-            self.root = Path(root)
-        else:
-            self.temporary_directory = tempfile.TemporaryDirectory(
-                suffix='suf',
-                prefix='temporary_directory_generated_', 
-                dir=root, 
-                ignore_cleanup_errors=False,
-                delete=True
-            )
-            self.root = Path(self.temporary_directory.name)
+        self.task = task
+        self.temporary_directory = tempfile.TemporaryDirectory(
+            prefix='temporary_directory_generated_', 
+            dir=root, 
+            ignore_cleanup_errors=False,
+            delete=False
+        )
+        self.root = Path(self.temporary_directory.name)
         self.bids_path = self.root.joinpath(self.data_folder)
     
     def _add_participant_metadata(
@@ -189,6 +186,24 @@ class DummyDataset:
             ignore_index=True
         )
     
+    def _populate_labels(self) -> 'DummyDataset':
+        """Populate the labels for the dataset.
+
+        Returns:
+            DummyDataset: The DummyDataset object.
+        """
+        labels_and_attributes_mapping = {
+            'subjects': self.n_subjects,
+            'sessions': self.n_sessions,
+            'runs': self.n_runs
+        }
+        for lab_type, lab_tot_number in labels_and_attributes_mapping.items():
+            label_list = list()
+            for number in range(1, lab_tot_number + 1):
+                label_list.append(self._generate_label(lab_type, number))
+            setattr(self,lab_type, label_list)
+            
+        return self
     def create_participants_metadata(self) -> 'DummyDataset':
         """Create participant metadata for the dataset.
 
@@ -208,10 +223,15 @@ class DummyDataset:
                 np.random.choice(['right', 'left', 'ambidextrous'])
             )
             holder['participant_id'].append(
-                self._generate_label('subject', subject_number)
+                self._generate_label(
+                    'subjects', 
+                     label_number=subject_number,
+                     label_str_id=self.subjects_label_str
+                     )
             )
         
         self.participant_metadata = pd.DataFrame(holder)
+        self.subjects = self.participant_metadata['participant_id'].tolist()
         return self
     
     def _save_participant_metadata(self) -> None:
@@ -225,7 +245,7 @@ class DummyDataset:
         
     def _generate_label(
         self: 'DummyDataset',
-        label_type: str = 'subject',
+        label_type: str = 'subjects',
         label_number: int = 1,
         label_str_id: Optional[str] = None,
     ) -> str:
@@ -268,14 +288,14 @@ class DummyDataset:
         
         for subject_number in range(1, self.n_subjects + 1):
             subject_folder_label = self._generate_label(
-                label_type='subject',
+                label_type='subjects',
                 label_number=subject_number,
                 label_str_id=self.subjects_label_str
             )
             
             for session_number in range(1, self.n_sessions + 1):
                 session_folder_label = self._generate_label(
-                    label_type='session',
+                    label_type='sessions',
                     label_number=session_number,
                     label_str_id=self.sessions_label_str
                 )
@@ -409,7 +429,7 @@ class DummyDataset:
          
         for path in path_list:
             for run_number in range(1, self.n_runs + 1):
-                run_label = self._generate_label('run', run_number)
+                run_label = self._generate_label('runs', run_number)
                 eeg_directory = path.joinpath('eeg')
                 eeg_directory.mkdir(parents=True, exist_ok=True)
 
@@ -428,7 +448,7 @@ class DummyDataset:
                 eeg_filename = "_".join([
                     entities['subject'],
                     entities['session'],
-                    'task-test',
+                    f'task-{self.task}',
                     run_label,
                     'eeg',
                 ])
