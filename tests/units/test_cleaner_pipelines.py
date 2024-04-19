@@ -1,15 +1,14 @@
 import os
 import tempfile
 from pathlib import Path
+from typing import Any, Dict, Generator
 
 import bids
 import pytest
 import simulated_data
-from typing import Dict, Any
-import pytest
-from typing import Generator
 
 import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
+
 
 @pytest.fixture
 def temp_bids_files() -> Generator[Any, Any, Any]:

@@ -8,7 +8,7 @@ from typing import List, Optional, Union
 import mne
 import numpy as np
 import pandas as pd
-from mne import annotation_from_events, create_info, make_fixed_length_events
+from mne import annotations_from_events, create_info, make_fixed_length_events
 from mne.io import RawArray
 from mne.utils import check_random_state
 from path_handler import DirectoryTree
@@ -18,7 +18,12 @@ def simulate_eeg_data(
     n_channels: int = 32,
     duration_seconds: int = 2,
     sampling_frequency: int = 256,
-    events_name: Optional[str] = 'R128'
+    events_kwargs: dict = dict(
+        name= 'R128',
+        number= 1,
+        start = 1,
+        stop = 5
+    )
 ) -> RawArray:
     """Simulate EEG data.
 
@@ -44,19 +49,19 @@ def simulate_eeg_data(
     data = np.random.rand(n_channels, n_samples)
     info = create_info(n_channels, sampling_frequency, ch_types="eeg")
     raw = RawArray(data, info)
-    if events_name:
-        events = make_fixed_length_events(
-            raw, 
-            id=1, 
-            duration=0, 
-            overlap=0, 
-            start=0
-        )
-        raw.add_events(events)
-        annotations = annotation_from_events(
-            events=events, 
-            sfreq=sampling_frequency,
-            event_desc=events_name
+    if events_kwargs:
+        
+        events_index = np.linspace(
+            events_kwargs['start']*sampling_frequency, 
+            events_kwargs['stop']*sampling_frequency,
+            num=events_kwargs['number'], 
+            endpoint=False
+            )
+        events_name = [events_kwargs['name']] * events_kwargs['number']
+        annotations = mne.Annotations(
+            onset=events_index,
+            duration=0,
+            description=events_name
         )
         raw.set_annotations(annotations)
     
@@ -375,7 +380,8 @@ class DummyDataset:
     
     def create_eeg_dataset(
         self,
-        fmt: str = 'brainvision'
+        fmt: str = 'brainvision',
+        **kwargs
     ) -> str:
         """Create temporary BIDS dataset.
         
@@ -422,7 +428,7 @@ class DummyDataset:
                 eeg_filename += extension
                 eeg_absolute_filename = eeg_directory.joinpath(eeg_filename)
 
-                raw = simulate_eeg_data()
+                raw = simulate_eeg_data(**kwargs)
                 mne.export.export_raw(
                     fname=eeg_absolute_filename,
                     raw=raw,
