@@ -13,7 +13,9 @@ import pandas as pd
 def simulate_eeg_data(
     n_channels: int = 32,
     duration_seconds: int = 2,
-    sampling_frequency: int = 256) -> mne.io.RawArray:
+    sampling_frequency: int = 256,
+    events_name = 'R128',
+    ) -> mne.io.RawArray:
     """Simulate EEG data.
 
     This is just to perform unittest, it is basically a random distirbution.
@@ -32,11 +34,29 @@ def simulate_eeg_data(
 
     if duration_seconds <= 0:
         raise ValueError("The duration must be greater than 0.")
-    
+
     n_samples = duration_seconds * sampling_frequency
+
     data = np.random.rand(n_channels, n_samples)
     info = mne.create_info(n_channels, sampling_frequency, ch_types="eeg")
-    return mne.io.RawArray(data, info)
+    raw = mne.io.RawArray(data, info)
+    if events_name:
+        events = mne.make_fixed_length_events(
+            raw, 
+            id=1, 
+            duration=0, 
+            overlap=0, 
+            start=0
+        )
+        raw.add_events(events)
+        annotations = mne.annotation_from_events(
+            events=events, 
+            sfreq = sampling_frequency,
+            event_desc=events_name
+        )
+        raw.set_annotations(annotations)
+    
+    return raw
 class DummyDataset:
     """A class to create a dummy BIDS dataset for EEG data.
     
@@ -165,7 +185,6 @@ class DummyDataset:
             sep="\t",
             index=False
         )
-                                  
         
     def _generate_label(
         self: 'DummyDataset',

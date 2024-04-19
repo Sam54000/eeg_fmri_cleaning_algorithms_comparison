@@ -1,0 +1,4 @@
+import pytest
+import simulated_data
+import eeg_fmri_cleaning_algorithms_comparison.main_cleaner_pipelines as mcp
+
