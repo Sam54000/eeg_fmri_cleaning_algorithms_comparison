@@ -8,15 +8,14 @@ from typing import List, Optional, Union
 import mne
 import numpy as np
 import pandas as pd
-from mne import annotations_from_events, create_info, make_fixed_length_events
+from mne import create_info
 from mne.io import RawArray
-from mne.utils import check_random_state
 from path_handler import DirectoryTree
 
 
 def simulate_eeg_data(
-    n_channels: int = 32,
-    duration_seconds: int = 2,
+    n_channels: int = 16,
+    duration: int = 2,
     sampling_frequency: int = 256,
     events_kwargs: dict = dict(
         name= 'R128',
@@ -41,14 +40,20 @@ def simulate_eeg_data(
     if n_channels <= 0:
         raise ValueError("The number of channels must be greater than 0.")
 
-    if duration_seconds <= 0:
+    if duration <= 0:
         raise ValueError("The duration must be greater than 0.")
 
-    n_samples = duration_seconds * sampling_frequency
+    n_samples = duration * sampling_frequency
 
     data = np.random.rand(n_channels, n_samples)
-    info = create_info(n_channels, sampling_frequency, ch_types="eeg")
+    channel_names = [str(i) for i in range(n_channels)]
+    info = create_info(channel_names, sampling_frequency, ch_types="eeg")
     raw = RawArray(data, info)
+    montage = mne.channels.make_standard_montage('biosemi16')
+    ch_names = montage.ch_names
+    channel_mapping = {str(i): ch_name for i, ch_name in enumerate(ch_names)}
+    raw.rename_channels(channel_mapping)
+    raw.set_montage(montage)
     if events_kwargs:
         
         events_index = np.linspace(
@@ -57,9 +62,10 @@ def simulate_eeg_data(
             num=events_kwargs['number'], 
             endpoint=False
             )
+        print(len(events_index))
         events_name = [events_kwargs['name']] * events_kwargs['number']
         annotations = mne.Annotations(
-            onset=events_index,
+            onset=events_index/sampling_frequency,
             duration=0,
             description=events_name
         )
@@ -131,6 +137,8 @@ class DummyDataset:
         
         self.n_subjects = n_subjects
         self.n_sessions = n_sessions
+        self.subjects = [f"sub-{i:03d}" for i in range(1, n_subjects + 1)]
+        self.sessions = [f"ses-{i:03d}" for i in range(1, n_sessions + 1)]
         self.n_runs = n_runs
         self.data_folder = data_folder
         self.sessions_label_str = sessions_label_str

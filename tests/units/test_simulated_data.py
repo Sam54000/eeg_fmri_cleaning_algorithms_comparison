@@ -113,7 +113,7 @@ def test_eeg_dataset_annotations(testing_path):
     dataset = DummyDataset(root = testing_path)
     dataset.create_eeg_dataset(
         fmt = 'eeglab',
-        duration_seconds = 10,
+        duration = 10,
         events_kwargs = dict(
             name = 'testing_event',
             number = 3,
@@ -121,11 +121,11 @@ def test_eeg_dataset_annotations(testing_path):
             stop = 8
         )
     )
+
     testing_path = testing_path.joinpath('RAW', 'sub-001', 'ses-001', 'eeg')
     testing_eeg_name = 'sub-001_ses-001_task-test_run-001_eeg.set'
     filename = testing_path.joinpath(testing_eeg_name)
     raw = mne.io.read_raw_eeglab(filename)
     annotations = raw.annotations
     assert len(annotations.onset) == 3
-    assert annotations.description[0] == 'testing_event'
-        
+    assert annotations.description[0] == 'testing_event'    
