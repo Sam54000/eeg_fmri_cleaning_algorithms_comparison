@@ -11,6 +11,7 @@ import pandas as pd
 from mne import annotation_from_events, create_info, make_fixed_length_events
 from mne.io import RawArray
 from mne.utils import check_random_state
+from path_handler import DirectoryTree
 
 
 def simulate_eeg_data(
