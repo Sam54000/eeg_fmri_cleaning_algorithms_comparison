@@ -393,6 +393,7 @@ class DummyDataset:
                     fname = eeg_absolute_filename,
                     raw=raw,
                     fmt=fmt,
+                    overwrite=True
                 )
 
                 # Create sidecar JSON file

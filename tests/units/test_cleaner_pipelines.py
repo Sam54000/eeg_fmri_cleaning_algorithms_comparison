@@ -67,8 +67,8 @@ def test_make_saving_path(temp_bids_files) -> None:
             os.path.join(
                 bids_path.parent,
                 f'DERIVATIVES/{added_folder}',
-                'sub-01',
-                'ses-01',
+                'sub-001',
+                'ses-001',
                 'eeg'
             )
         )
@@ -89,7 +89,7 @@ def test_sidecare_copied_at_correct_location(temp_bids_files):
         expected_filename = Path(
             os.path.join(
                 str(path),
-                'sub-01_ses-01_task-test_run-01_eeg.json'
+                'sub-001_ses-001_task-test_run-001_eeg.json'
             )
         )
 
@@ -111,7 +111,7 @@ def test_save_raw_method(temp_bids_files):
         expected_filename = Path(
             os.path.join(
                 str(path),
-                'sub-01_ses-01_task-test_run-01_eeg.fif'
+                'sub-001_ses-001_task-test_run-001_eeg.fif'
             )
         )
         assert os.path.isfile(expected_filename)
@@ -127,13 +127,13 @@ def test_function_pipe(temp_bids_files):
             temp_bids_files['bids_path'].parent,
             'DERIVATIVES',
             procedures,
-            'sub-01',
-            'ses-01',
+            'sub-001',
+            'ses-001',
             'eeg'
         )
     )
-    eeg_filename = 'sub-01_ses-01_task-test_run-01_eeg.fif'
-    json_filename = 'sub-01_ses-01_task-test_run-01_eeg.json'
+    eeg_filename = 'sub-001_ses-001_task-test_run-001_eeg.fif'
+    json_filename = 'sub-001_ses-001_task-test_run-001_eeg.json'
     expected_eeg_filename = os.path.join(expected_saving_path, eeg_filename)
     expected_json_filename = os.path.join(expected_saving_path, json_filename)
     assert os.path.isfile(expected_eeg_filename)
