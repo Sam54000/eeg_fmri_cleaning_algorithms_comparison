@@ -1,22 +1,30 @@
+import functools
 import json
 import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, Callable, List, Optional, TypeVar, Union, cast
 
 import mne
+import neurokit2 as nk
 import numpy as np
 import pandas as pd
 from mne import create_info
 from mne.io import RawArray
 from path_handler import DirectoryTree
 
-# TODO: refactor the eeg dataset generation with the newly populate labels method
-
+# TODO: 
+#   - refactor the eeg dataset generation with the newly populate labels method
+#   - add the simulation of: 
+#                           - EOG
+#                           - gradient artifacts
+#                           - BCG artifacts  
+FunctionType = TypeVar('FunctionType', bound=Callable[..., Any])
 def simulate_eeg_data(
     n_channels: int = 16,
     duration: int = 2,
+    misc_channels: list = ['ecg'],
     sampling_frequency: int = 256,
     events_kwargs: dict = dict(
         name= 'R128',
@@ -44,17 +52,39 @@ def simulate_eeg_data(
     if duration <= 0:
         raise ValueError("The duration must be greater than 0.")
 
-    n_samples = duration * sampling_frequency
-
-    data = np.random.rand(n_channels, n_samples)
+    eeg_data = np.zeros((n_channels, duration * sampling_frequency))
+    for channel in range(n_channels):
+        eeg_data[channel,:] = nk.eeg_simulate(duration=duration, 
+                                sampling_rate=sampling_frequency)
+            
     channel_names = [str(i) for i in range(n_channels)]
-    info = create_info(channel_names, sampling_frequency, ch_types="eeg")
-    raw = RawArray(data, info)
     montage = mne.channels.make_standard_montage('biosemi16')
     ch_names = montage.ch_names
     channel_mapping = {str(i): ch_name for i, ch_name in enumerate(ch_names)}
+    info = create_info(channel_names, sampling_frequency, ch_types='eeg')
+    print(eeg_data.shape)
+    raw = RawArray(eeg_data, info)
     raw.rename_channels(channel_mapping)
     raw.set_montage(montage)
+
+    if misc_channels:
+        misc_channels_object_list = list()
+        channel_names.append(misc_channels)
+        if 'ecg' in misc_channels:
+            ecg = nk.ecg_simulate(duration=duration, 
+                                  sampling_rate=sampling_frequency)
+            ecg = np.expand_dims(ecg, axis=0)
+            raw_ecg = RawArray(ecg, create_info(['ecg'], sampling_frequency))
+            misc_channels_object_list.append(raw_ecg)
+            
+        if 'emg' in misc_channels:
+            emg = nk.emg_simulate(duration=duration, 
+                                  sampling_rate=sampling_frequency)
+            emg = np.expand_dims(emg, axis=0)
+            raw_emg = RawArray(emg, create_info(['emg'], sampling_frequency))
+            misc_channels_object_list.append(raw_emg)
+        raw.add_channels(misc_channels_object_list)
+
     if events_kwargs:
         
         events_index = np.linspace(
@@ -152,6 +182,30 @@ class DummyDataset:
         )
         self.root = Path(self.temporary_directory.name)
         self.bids_path = self.root.joinpath(self.data_folder)
+        
+    def pipe(func) -> FunctionType:
+        """Decorator that pipes to the folder creation and saving methods.
+
+        Args:
+            func (FunctionType): The function to decorate.
+
+        Returns:
+            FunctionType: The decorated function.
+        """
+        @functools.wraps(func)
+        def wrapper_decorator(self,
+                              *args: Any, 
+                              **kwargs: Any) -> Any:
+            # Call the method itself
+            result = func(self, *args, **kwargs)
+            # Then call the other methods
+            self._make_derivatives_saving_path()
+            self._save_raw()
+            self._copy_sidecar()
+            # Return the result of the original function call
+            return result
+        
+        return cast(FunctionType, wrapper_decorator)
     
     def _add_participant_metadata(
         self, 

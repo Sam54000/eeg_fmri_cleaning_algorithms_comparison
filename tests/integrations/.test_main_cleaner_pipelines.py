@@ -3,6 +3,7 @@ import simulated_data
 import eeg_fmri_cleaning_algorithms_comparison.main_cleaner_pipelines as mcp
 from pathlib import Path
 
+def 
 def test_main_path_integrity():
     cwd = Path.cwd()
     test_output_path = cwd.joinpath('tests/outputs')

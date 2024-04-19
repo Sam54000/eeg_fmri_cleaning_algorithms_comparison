@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Generator
 
 import bids
+import mne
 import pytest
 import simulated_data
 
@@ -12,15 +13,41 @@ import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
 
 @pytest.fixture
 def temp_bids_files() -> Generator[Any, Any, Any]:
-    dataset_object = simulated_data.DummyDataset(root='./tests/outputs')
+    cwd = Path.cwd()
+    test_output_path = cwd.joinpath('tests','outputs')
+    dataset_object = simulated_data.DummyDataset(root=test_output_path)
     dataset_object.create_eeg_dataset()
     bids_path = dataset_object.bids_path
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.vhdr')
-    print(bids_files)
     temp_dataset = {'bids_files': bids_files, 'bids_path': bids_path}
     return temp_dataset
 
+@pytest.fixture
+def predifined_cleaner(testing_path):
+    dataset_object = simulated_data.DummyDataset(root=testing_path)
+    dataset_object.create_eeg_dataset(
+        fmt='eeglab',
+        sampling_frequency=5000,
+        duration = 25,
+        events_kwargs=dict(
+            name = 'R128',
+            number = 10,
+            start = 1,
+            stop = 21,
+    )
+    )
+    bids_path = dataset_object.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    return cleaner
+
+@pytest.fixture
+def testing_path():
+    cwd = Path.cwd()
+    output_dir = cwd.joinpath('tests','outputs') 
+    return output_dir
 
 def test_append_message_to_txt_file() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -131,3 +158,37 @@ def test_decorator_pipe(temp_bids_files):
     expected_json_filename = os.path.join(expected_saving_path, json_filename)
     assert os.path.isfile(expected_eeg_filename)
     assert os.path.isfile(expected_json_filename)
+
+def test_run_clean_gradient(predifined_cleaner):
+    predifined_cleaner.read_raw()
+    predifined_cleaner.clean_gradient()
+    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
+    assert len(predifined_cleaner.raw.annotations.description) == 10
+    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+    
+def test_run_clean_bcg(predifined_cleaner):
+    predifined_cleaner.read_raw()
+    predifined_cleaner.clean_clean_bcg()
+    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
+    assert len(predifined_cleaner.raw.annotations.description) == 10
+    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+
+def test_run_pyprep(predifined_cleaner):
+    predifined_cleaner.read_raw()
+    predifined_cleaner.run_pyprep()
+    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
+    assert len(predifined_cleaner.raw.annotations.description) == 10
+    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+
+def test_run_asr(predifined_cleaner):
+    predifined_cleaner.read_raw()
+    predifined_cleaner.run_asr()
+    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
+    assert len(predifined_cleaner.raw.annotations.description) == 10
+    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+
+def test_chain(predifined_cleaner):
+    predifined_cleaner.read_raw().run_clean_gradient().run_clean_bcg().run_pyprep().run_asr()
+    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
+    assert len(predifined_cleaner.raw.annotations.description) == 10
+    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
