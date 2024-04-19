@@ -227,7 +227,7 @@ class DummyDataset:
         """
         path_list = list()
         
-        for subject_number in range(1, self.n_subject+ 1):
+        for subject_number in range(1, self.n_subjects+ 1):
             subject_folder_label = self._generate_label(
                 label_type = 'subject',
                 label_number = subject_number,
@@ -275,7 +275,7 @@ class DummyDataset:
             eeg_folder (str | os.PathLike): The folder containing the EEG data.
         """
         json_filename = Path(os.path.splitext(eeg_filename)[0])
-        json_filename.with_suffix('.json')
+        json_filename = json_filename.with_suffix('.json')
         
         json_content = {
           "SamplingFrequency":2400,
@@ -355,15 +355,14 @@ class DummyDataset:
             str: The path of the temporary BIDS dataset.
         """
         # Define the necessary BIDS files for dataset description
-        self._create_bids_folder()
+        path_list = self.create_modality_agnostic_dir()
         self._create_dataset_description()
         self.create_participants_metadata()
-        path_list = self.create_modality_agnostic_dir()
          
         for path in path_list:
             for run_number in range(1, self.n_runs + 1):
                 run_label = self._generate_label('run', run_number)
-                eeg_directory = self.path.joinpath('eeg')
+                eeg_directory = path.joinpath('eeg')
                 eeg_directory.mkdir(parents=True, exist_ok=True)
 
                 # Define file names for EEG data files
@@ -381,12 +380,12 @@ class DummyDataset:
                 eeg_filename = "_".join([
                     entities['subject'],
                     entities['session'],
-                    run_label,
                     'task-test',
+                    run_label,
                     'eeg',
-                    extension
                 ])
 
+                eeg_filename += extension
                 eeg_absolute_filename = eeg_directory.joinpath(eeg_filename)
 
                 raw = simulate_eeg_data()
@@ -397,7 +396,7 @@ class DummyDataset:
                 )
 
                 # Create sidecar JSON file
-                self._create_sidecar_json(eeg_filename)
+                self._create_sidecar_json(eeg_absolute_filename)
 
 
         self._save_participant_metadata()
