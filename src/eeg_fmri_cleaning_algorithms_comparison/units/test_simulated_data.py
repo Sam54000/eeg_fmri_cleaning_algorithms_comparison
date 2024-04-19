@@ -78,8 +78,8 @@ def test_create_modality_agnostic_dir(testing_path):
 
 def test_extract_entities_from_path(testing_path):
     dataset = DummyDataset(root = testing_path)
-    path = testing_path.joinpath('RAW', 'sub-001', 'ses-001')
-    entities = dataset._extract_entities_from_path(path)
+    asserting_path = testing_path.joinpath('RAW', 'sub-001', 'ses-001')
+    entities = dataset._extract_entities_from_path(asserting_path)
     assert entities == {'subject': 'sub-001', 'session': 'ses-001'}
 
 def test_create_sidecar_json(testing_path):

@@ -52,7 +52,8 @@ class DummyDataset:
                  sessions_label_str = None,
                  subjects_label_str = None,
                  data_folder: str = "RAW",
-                 root: str | os.PathLike = None) -> None:
+                 root: str | os.PathLike = None,
+                 testing = True) -> None:
         """Initialize the DummyDataset object.
 
         Args:
@@ -99,11 +100,16 @@ class DummyDataset:
         self.data_folder = data_folder
         self.sessions_label_str = sessions_label_str
         self.subjects_label_str = subjects_label_str
-        if root:
+        if testing and root:
             self.root = Path(root)
         else:
-            self.root = Path(tempfile.mkdtemp())
-        
+            self.temporary_directory = tempfile.TemporaryDirectory(
+                suffix='suf',
+                prefix='temporary_directory_generated_', 
+                dir=root, 
+                ignore_cleanup_errors=False,
+                delete=True)
+            self.root = Path(self.temporary_directory.name)
         self.bids_path = self.root.joinpath(self.data_folder)
     
     def _add_participant_metadata(

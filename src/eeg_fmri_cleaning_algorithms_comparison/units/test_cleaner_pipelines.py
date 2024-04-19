@@ -20,8 +20,7 @@ def temp_bids_files() -> Generator[Any, Any, Any]:
     bids_files = bids_layout.get(extension = '.vhdr')
     print(bids_files)
     temp_dataset = {'bids_files': bids_files, 'bids_path': bids_path}
-    yield temp_dataset
-    dataset_object.flush(check=False)
+    return temp_dataset
 
 
 def test_append_message_to_txt_file() -> None:
@@ -63,15 +62,12 @@ def test_make_saving_path(temp_bids_files) -> None:
         else:
             added_folder = process[0]
         cleaner._make_derivatives_saving_path()
-        expected_path = Path(
-            os.path.join(
-                bids_path.parent,
+        expected_path = bids_path.parent.joinpath(
                 f'DERIVATIVES/{added_folder}',
                 'sub-001',
                 'ses-001',
                 'eeg'
             )
-        )
         assert str(cleaner.derivatives_path) == str(expected_path)
         
 def test_sidecare_copied_at_correct_location(temp_bids_files):
@@ -86,15 +82,13 @@ def test_sidecare_copied_at_correct_location(temp_bids_files):
 
         path = cleaner.derivatives_path
 
-        expected_filename = Path(
-            os.path.join(
-                str(path),
-                'sub-001_ses-001_task-test_run-001_eeg.json'
+        expected_filename = path.joinpath(
+            'sub-001_ses-001_task-test_run-001_eeg.json'
             )
-        )
 
         print(expected_filename)
-        assert os.path.isfile(expected_filename)
+
+        assert os.path.exists(str(expected_filename))
     
 def test_save_raw_method(temp_bids_files):
     cleaner = cp.CleanerPipelines(temp_bids_files['bids_files'][0])
@@ -116,7 +110,7 @@ def test_save_raw_method(temp_bids_files):
         )
         assert os.path.isfile(expected_filename)
 
-def test_function_pipe(temp_bids_files):
+def test_decorator_pipe(temp_bids_files):
     cleaner = cp.CleanerPipelines(temp_bids_files['bids_files'][0])
     cleaner.raw = simulated_data.simulate_eeg_data()
     procedures = 'TEST_PIPE'

@@ -88,9 +88,10 @@ class CleanerPipelines:
             added_folder (str, optional): The folder to be added after the 
                                           derivatives one.
         """
-        reading_path = Path(self.rawdata_path)
-        path_parts = list(reading_path.parts)
-        rawdata_dirname = [name for name in path_parts if "raw" in name.lower()][0]
+        path_parts = list(self.rawdata_path.parts)
+        rawdata_dirname = [
+            name for name in path_parts if "raw" in name.lower()
+            ][0]
         path_parts[path_parts.index(rawdata_dirname)] = "DERIVATIVES"
         if len(self.process_history) > 1:
             added_folder = "_".join(self.process_history)
@@ -111,22 +112,29 @@ class CleanerPipelines:
             where_to_copy (str | os.PathLike): The folder to copy the sidecar file.
         """
         base_filename, _ = os.path.splitext(self.BIDSFile.filename)
-        source_sidecar_path = Path(self.rawdata_path).parent
+        source_sidecar_path = self.rawdata_path.parent
         json_filename = base_filename+ ".json"
 
         source_sidecar_filename = os.path.join(
             source_sidecar_path, 
             json_filename
             )
+        
+        print(f"source: {source_sidecar_filename}")
 
         destination_sidecar_filename = os.path.join(
             self.derivatives_path, 
             json_filename
         )
+        
+        print(f"destination: {destination_sidecar_filename}")
 
         if os.path.isfile(source_sidecar_filename):
             shutil.copyfile(source_sidecar_filename,
                             destination_sidecar_filename)
+        else:
+            message = f"""The sidecar file {source_sidecar_filename} does not exist."""
+            print(message)
 
     def _save_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Save the cleaned raw EEG data in the BIDS format."""
