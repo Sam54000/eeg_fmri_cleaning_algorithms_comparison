@@ -31,24 +31,27 @@ import bids
 from cleaner_pipelines import write_report, CleanerPipelines
 
 
-def run_cbin_cleaner(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
-    cleaner = CleanerPipelines(BIDSFile)
-    cleaner.read_raw()
-    print(cleaner.)
-    if cleaner._task_is("checker"):
-        cleaner.clean_gradient().clean_bcg()
-    elif cleaner._task_is("checkeroff"):
-        cleaner.clean_bcg()
-    return cleaner
+class MainCleanerPipelines:
+    def __init__(self, BIDSFile: bids.layout.models.BIDSFile):
+        self.BIDSFile = BIDSFile
+            
+    def run_cbin_cleaner(self) -> None:  # noqa: D103
+        cleaner = CleanerPipelines(self.BIDSFile)
+        cleaner.read_raw()
+        if cleaner._task_is("checker"):
+            cleaner.clean_gradient().clean_bcg()
+        elif cleaner._task_is("checkeroff"):
+            cleaner.clean_bcg()
+        return cleaner
 
-def run_cbin_cleaner_asr(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
-    cleaner = run_cbin_cleaner(BIDSFile)
-    cleaner.run_asr()
+    def run_cbin_cleaner_asr(self) -> None:  # noqa: D103
+        cleaner = self.run_cbin_cleaner(self.BIDSFile)
+        cleaner.run_asr()
 
-def run_cbin_cleaner_pyprep_asr(BIDSFile: bids.layout.models.BIDSFile) -> None:  # noqa: D103
-    cleaner = run_cbin_cleaner(BIDSFile)
-    cleaner.run_pyprep()
-    cleaner.run_asr()
+    def run_cbin_cleaner_pyprep_asr(self) -> None:  # noqa: D103
+        cleaner = self.run_cbin_cleaner(self.BIDSFile)
+        cleaner.run_pyprep()
+        cleaner.run_asr()
     
 def main(reading_path):
    
@@ -58,18 +61,22 @@ def main(reading_path):
 
 
     layout = bids.BIDSLayout(reading_path)
-    file_list = layout.get(
-        extension=".set",
-        )
+    file_list = layout.get(extension=".set")
 
     for BIDSFile_object in file_list:
         if any([BIDSFile_object.task == "checker",
                 BIDSFile_object.task == "checkeroff"]):
-            for pipeline_function in [run_cbin_cleaner, 
-                                    run_cbin_cleaner_asr, 
-                                    run_cbin_cleaner_pyprep_asr]:
+            #
+            # The problem is here don't make a list of functions
+            #
+            for pipeline_function in ["run_cbin_cleaner", 
+                                    "run_cbin_cleaner_asr", 
+                                    "run_cbin_cleaner_pyprep_asr"]:
                 try:
-                    pipeline_function(BIDSFile_object)
+                    getattr(
+                        MainCleanerPipelines(
+                            BIDSFile_object), pipeline_function)()
+
                 except Exception as e:
                     message = f"""filename: {BIDSFile_object.filename}
                     process:{pipeline_function.__name__}

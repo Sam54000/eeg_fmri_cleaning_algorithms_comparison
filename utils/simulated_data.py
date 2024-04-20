@@ -21,6 +21,11 @@ from path_handler import DirectoryTree
 #                           - gradient artifacts
 #                           - BCG artifacts  
 FunctionType = TypeVar('FunctionType', bound=Callable[..., Any])
+def simulate_light_eeg_data(
+    n_channels: int = 16,
+    duration: int = 2,
+    sampling_frequency: int = 256,
+    
 def simulate_eeg_data(
     n_channels: int = 16,
     duration: int = 2,
@@ -56,16 +61,11 @@ def simulate_eeg_data(
     for channel in range(n_channels):
         eeg_data[channel,:] = nk.eeg_simulate(duration=duration, 
                                 sampling_rate=sampling_frequency)
-            
+
     channel_names = [str(i) for i in range(n_channels)]
     montage = mne.channels.make_standard_montage('biosemi16')
     ch_names = montage.ch_names
     channel_mapping = {str(i): ch_name for i, ch_name in enumerate(ch_names)}
-    info = create_info(channel_names, sampling_frequency, ch_types='eeg')
-    print(eeg_data.shape)
-    raw = RawArray(eeg_data, info)
-    raw.rename_channels(channel_mapping)
-    raw.set_montage(montage)
 
     if misc_channels:
         misc_channels_object_list = list()
@@ -73,6 +73,9 @@ def simulate_eeg_data(
         if 'ecg' in misc_channels:
             ecg = nk.ecg_simulate(duration=duration, 
                                   sampling_rate=sampling_frequency)
+            
+            eeg_data[ch_names.index('T8'),:] *= (ecg * 2)*1e-6
+            eeg_data[ch_names.index('T7'),:] *= - (ecg * 2)*1e-6
             ecg = np.expand_dims(ecg, axis=0)
             raw_ecg = RawArray(ecg, create_info(['ecg'], sampling_frequency))
             misc_channels_object_list.append(raw_ecg)
@@ -84,6 +87,11 @@ def simulate_eeg_data(
             raw_emg = RawArray(emg, create_info(['emg'], sampling_frequency))
             misc_channels_object_list.append(raw_emg)
         raw.add_channels(misc_channels_object_list)
+
+    info = create_info(channel_names, sampling_frequency, ch_types='eeg')
+    raw = RawArray(eeg_data, info)
+    raw.rename_channels(channel_mapping)
+    raw.set_montage(montage)
 
     if events_kwargs:
         
@@ -178,7 +186,7 @@ class DummyDataset:
             prefix='temporary_directory_generated_', 
             dir=root, 
             ignore_cleanup_errors=False,
-            delete=False
+            delete=True
         )
         self.root = Path(self.temporary_directory.name)
         self.bids_path = self.root.joinpath(self.data_folder)

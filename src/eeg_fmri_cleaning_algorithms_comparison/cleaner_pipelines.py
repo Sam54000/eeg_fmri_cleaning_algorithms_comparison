@@ -165,7 +165,8 @@ class CleanerPipelines:
         return self.BIDSFile.get_entities()["task"] == task_name
 
     @pipe
-    def run_pyprep(self: "CleanerPipelines") -> "CleanerPipelines":
+    def run_pyprep(self: "CleanerPipelines",
+                   montage_name = "easycap-M10") -> "CleanerPipelines":
         """Clean the EEG data using the PyPrep algorithm.
 
         Args:
@@ -174,8 +175,8 @@ class CleanerPipelines:
         Returns:
             mne.io.Raw: The cleaned EEG data.
         """
-        montage = mne.channels.make_standard_montage("easycap-M10")
-        self.raw.apply_montage(montage)
+        montage = mne.channels.make_standard_montage(montage_name)
+        self.raw.set_montage(montage)
         prep_params = {
             "ref_chs": "eeg",
             "reref_chs": "eeg",
@@ -197,7 +198,7 @@ class CleanerPipelines:
         Returns:
             mne.io.Raw: The cleaned EEG data.
         """
-        asr = asrpy.ASR()
+        asr = asrpy.ASR(sfreq=self.raw.info["sfreq"])
         asr.fit(self.raw)
         self.raw = asr.transform(self.raw)
         self.process_history.append("ASR")

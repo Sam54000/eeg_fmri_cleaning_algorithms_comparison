@@ -168,14 +168,14 @@ def test_run_clean_gradient(predifined_cleaner):
     
 def test_run_clean_bcg(predifined_cleaner):
     predifined_cleaner.read_raw()
-    predifined_cleaner.clean_clean_bcg()
+    predifined_cleaner.clean_bcg()
     assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
     assert len(predifined_cleaner.raw.annotations.description) == 10
     assert isinstance(predifined_cleaner, cp.CleanerPipelines)
 
 def test_run_pyprep(predifined_cleaner):
     predifined_cleaner.read_raw()
-    predifined_cleaner.run_pyprep()
+    predifined_cleaner.run_pyprep(montage_name='biosemi16')
     assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
     assert len(predifined_cleaner.raw.annotations.description) == 10
     assert isinstance(predifined_cleaner, cp.CleanerPipelines)
@@ -188,7 +188,7 @@ def test_run_asr(predifined_cleaner):
     assert isinstance(predifined_cleaner, cp.CleanerPipelines)
 
 def test_chain(predifined_cleaner):
-    predifined_cleaner.read_raw().run_clean_gradient().run_clean_bcg().run_pyprep().run_asr()
+    predifined_cleaner.read_raw().clean_gradient().clean_bcg().run_pyprep().run_asr()
     assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
     assert len(predifined_cleaner.raw.annotations.description) == 10
     assert isinstance(predifined_cleaner, cp.CleanerPipelines)
