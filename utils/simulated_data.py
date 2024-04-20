@@ -85,9 +85,15 @@ def simulate_eeg_data(
 
     eeg_data = np.zeros((n_channels, duration * sampling_frequency))
     for channel in range(n_channels):
+        # !!!!!!
+        # Careful it is sensitive to the duration. Somewhat it doesn't have 
+        # the same shape as the premade eeg_data array so numpy throws an error
+        # saying it couldn't broadcast the array.
+        # I will need to take care of that
         eeg_data[channel,:] = nk.eeg_simulate(duration=duration, 
                                 sampling_rate=sampling_frequency,
-                                noise= 0.01)
+                                noise= 0.1)
+        
 
     channel_names = [str(i) for i in range(n_channels)]
     montage = mne.channels.make_standard_montage('biosemi16')

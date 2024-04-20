@@ -78,8 +78,9 @@ def main(reading_path):
                             BIDSFile_object), pipeline_function)()
 
                 except Exception as e:
-                    message = f"""filename: {BIDSFile_object.filename}
-                    process:{pipeline_function.__name__}
-                    error:{e}
+                    message = f"""filename: {str(BIDSFile_object.filename)}
+                    process:{pipeline_function}
+                    error:{str(e)}
+
                     """
-                    write_report(report_filename, message)
+                    write_report(message, report_filename)

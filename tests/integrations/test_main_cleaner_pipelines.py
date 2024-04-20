@@ -20,8 +20,8 @@ def dataset():
     data.create_eeg_dataset(
         fmt = 'eeglab', 
         n_channels = 16,
-        duration = 60,
-        sampling_frequency = 256,
+        duration = 25,
+        sampling_frequency = 5000,
         misc_channels = ['ecg'],
         events_kwargs = 
         {
