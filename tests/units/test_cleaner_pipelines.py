@@ -12,20 +12,20 @@ import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
 
 
 @pytest.fixture
-def temp_bids_files() -> Generator[Any, Any, Any]:
+def testing_path():
     cwd = Path.cwd()
-    test_output_path = cwd.joinpath('tests','outputs')
-    dataset_object = simulated_data.DummyDataset(root=test_output_path)
-    dataset_object.create_eeg_dataset()
-    bids_path = dataset_object.bids_path
-    bids_layout = bids.layout.BIDSLayout(bids_path)
-    bids_files = bids_layout.get(extension = '.vhdr')
-    temp_dataset = {'bids_files': bids_files, 'bids_path': bids_path}
-    return temp_dataset
+    output_dir = cwd.joinpath('tests','outputs') 
+    return output_dir
 
 @pytest.fixture
-def predifined_cleaner(testing_path):
-    dataset_object = simulated_data.DummyDataset(root=testing_path)
+def light_dataset(output_dir) -> Generator[Any, Any, Any]:
+    dataset_object = simulated_data.DummyDataset(root=output_dir)
+    dataset_object.create_eeg_dataset(light = True, fmt='eeglab')
+    yield dataset_object
+
+@pytest.fixture(scope='class')
+def heavy_dataset(output_dir) -> Generator[Any, Any, Any]:
+    dataset_object = simulated_data.DummyDataset(root=output_dir)
     dataset_object.create_eeg_dataset(
         fmt='eeglab',
         sampling_frequency=5000,
@@ -37,17 +37,14 @@ def predifined_cleaner(testing_path):
             stop = 21,
     )
     )
-    bids_path = dataset_object.bids_path
+    bids_path = heavy_dataset.bids_path
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.set')
     cleaner = cp.CleanerPipelines(bids_files[0])
-    return cleaner
+    cleaner.read_raw()
 
-@pytest.fixture
-def testing_path():
-    cwd = Path.cwd()
-    output_dir = cwd.joinpath('tests','outputs') 
-    return output_dir
+    yield cleaner
+
 
 def test_append_message_to_txt_file() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -73,9 +70,13 @@ def test_filename_argument_is_none() -> None:
     except ValueError as e:
         assert str(e) == "The filename must be a string or a Path object."
 
-def test_make_saving_path(temp_bids_files) -> None:
-    bids_file = temp_bids_files['bids_files'][0]
-    bids_path = temp_bids_files['bids_path']
+def test_make_saving_path(light_dataset) -> None:
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    temp_dataset = {'bids_files': bids_files, 'bids_path': bids_path}
+    bids_file = temp_dataset['bids_files'][0]
+    bids_path = temp_dataset['bids_path']
     cleaner = cp.CleanerPipelines(bids_file)
     cleaner.process_history = list()
     process = list()
@@ -96,8 +97,11 @@ def test_make_saving_path(temp_bids_files) -> None:
             )
         assert str(cleaner.derivatives_path) == str(expected_path)
         
-def test_sidecare_copied_at_correct_location(temp_bids_files):
-    bids_file = temp_bids_files['bids_files'][0]
+def test_sidecare_copied_at_correct_location(light_dataset):
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    bids_file = bids_files[0]
     cleaner = cp.CleanerPipelines(bids_file)
     cleaner.process_history = list()
     procedures = ['GRAD', 'ASR', 'PYPREP']
@@ -116,8 +120,11 @@ def test_sidecare_copied_at_correct_location(temp_bids_files):
 
         assert os.path.exists(str(expected_filename))
     
-def test_save_raw_method(temp_bids_files):
-    cleaner = cp.CleanerPipelines(temp_bids_files['bids_files'][0])
+def test_save_raw_method(light_dataset):
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
     cleaner.raw = simulated_data.simulate_eeg_data()
     cleaner.process_history = list()
     procedures = ['GRAD', 'ASR', 'PYPREP']
@@ -136,15 +143,18 @@ def test_save_raw_method(temp_bids_files):
         )
         assert os.path.isfile(expected_filename)
 
-def test_decorator_pipe(temp_bids_files):
-    cleaner = cp.CleanerPipelines(temp_bids_files['bids_files'][0])
+def test_decorator_pipe(light_dataset):
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
     cleaner.raw = simulated_data.simulate_eeg_data()
     procedures = 'TEST_PIPE'
     cleaner.function_testing_decorator()
 
     expected_saving_path = Path(
         os.path.join(
-            temp_bids_files['bids_path'].parent,
+            bids_path.parent,
             'DERIVATIVES',
             procedures,
             'sub-001',
@@ -159,36 +169,33 @@ def test_decorator_pipe(temp_bids_files):
     assert os.path.isfile(expected_eeg_filename)
     assert os.path.isfile(expected_json_filename)
 
-def test_run_clean_gradient(predifined_cleaner):
-    predifined_cleaner.read_raw()
-    predifined_cleaner.clean_gradient()
-    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
-    assert len(predifined_cleaner.raw.annotations.description) == 10
-    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
-    
-def test_run_clean_bcg(predifined_cleaner):
-    predifined_cleaner.read_raw()
-    predifined_cleaner.clean_bcg()
-    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
-    assert len(predifined_cleaner.raw.annotations.description) == 10
-    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+class TestRunsCleanerPipelines:
+    def test_run_clean_gradient(self, heavy_dataset):
+        heavy_dataset.clean_gradient()
+        assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
+        assert len(heavy_dataset.raw.annotations.description) == 10
+        assert isinstance(heavy_dataset, cp.CleanerPipelines)
+        
+    def test_run_clean_bcg(self, heavy_dataset):
+        heavy_dataset.clean_bcg()
+        assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
+        assert len(heavy_dataset.raw.annotations.description) == 10
+        assert isinstance(heavy_dataset, cp.CleanerPipelines)
 
-def test_run_pyprep(predifined_cleaner):
-    predifined_cleaner.read_raw()
-    predifined_cleaner.run_pyprep(montage_name='biosemi16')
-    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
-    assert len(predifined_cleaner.raw.annotations.description) == 10
-    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+    def test_run_pyprep(self, heavy_dataset):
+        heavy_dataset.run_pyprep(montage_name='biosemi16')
+        assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
+        assert len(heavy_dataset.raw.annotations.description) == 10
+        assert isinstance(heavy_dataset, cp.CleanerPipelines)
 
-def test_run_asr(predifined_cleaner):
-    predifined_cleaner.read_raw()
-    predifined_cleaner.run_asr()
-    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
-    assert len(predifined_cleaner.raw.annotations.description) == 10
-    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+    def test_run_asr(self, heavy_dataset):
+        heavy_dataset.run_asr()
+        assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
+        assert len(heavy_dataset.raw.annotations.description) == 10
+        assert isinstance(heavy_dataset, cp.CleanerPipelines)
 
-def test_chain(predifined_cleaner):
-    predifined_cleaner.read_raw().clean_gradient().clean_bcg().run_pyprep().run_asr()
-    assert isinstance(predifined_cleaner.raw, mne.io.BaseRaw)
-    assert len(predifined_cleaner.raw.annotations.description) == 10
-    assert isinstance(predifined_cleaner, cp.CleanerPipelines)
+    def test_chain(self, heavy_dataset):
+        heavy_dataset.read_raw().clean_gradient().clean_bcg().run_pyprep().run_asr()
+        assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
+        assert len(heavy_dataset.raw.annotations.description) == 10
+        assert isinstance(heavy_dataset, cp.CleanerPipelines)

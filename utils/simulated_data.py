@@ -25,6 +25,32 @@ def simulate_light_eeg_data(
     n_channels: int = 16,
     duration: int = 2,
     sampling_frequency: int = 256,
+) -> RawArray:
+    """Simulate EEG data that have low impact on memory.
+    
+    When events and realistic EEG data are not needed, this function
+    provides a light version of the simulate_eeg_data function.
+
+    Args:
+        n_channels (int): The number of EEG channels.
+        duration (int): The duration of the EEG data in seconds.
+        sampling_frequency (int): The sampling frequency of the EEG data.
+
+    Returns:
+        RawArray: The simulated EEG data.
+    """
+    if n_channels <= 0:
+        raise ValueError("The number of channels must be greater than 0.")
+
+    if duration <= 0:
+        raise ValueError("The duration must be greater than 0.")
+
+    eeg_data = np.random.randn(n_channels, duration * sampling_frequency)
+    channel_names = [str(i) for i in range(n_channels)]
+    info = create_info(channel_names, sampling_frequency, ch_types='eeg')
+    raw = RawArray(eeg_data, info)
+    
+    return raw
     
 def simulate_eeg_data(
     n_channels: int = 16,
@@ -471,6 +497,7 @@ class DummyDataset:
     def create_eeg_dataset(
         self,
         fmt: str = 'brainvision',
+        light: bool = False,
         **kwargs
     ) -> str:
         """Create temporary BIDS dataset.
@@ -518,7 +545,11 @@ class DummyDataset:
                 eeg_filename += extension
                 eeg_absolute_filename = eeg_directory.joinpath(eeg_filename)
 
-                raw = simulate_eeg_data(**kwargs)
+                if light:
+                    raw = simulate_light_eeg_data(**kwargs)
+                else:
+                    raw = simulate_eeg_data(**kwargs)
+
                 mne.export.export_raw(
                     fname=eeg_absolute_filename,
                     raw=raw,
