@@ -10,26 +10,25 @@ import simulated_data
 
 import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
 
-
 @pytest.fixture
-def testing_path():
+def light_dataset() -> Generator[Any, Any, Any]:
     cwd = Path.cwd()
     output_dir = cwd.joinpath('tests','outputs') 
-    return output_dir
-
-@pytest.fixture
-def light_dataset(output_dir) -> Generator[Any, Any, Any]:
     dataset_object = simulated_data.DummyDataset(root=output_dir)
     dataset_object.create_eeg_dataset(light = True, fmt='eeglab')
     yield dataset_object
 
 @pytest.fixture(scope='class')
-def heavy_dataset(output_dir) -> Generator[Any, Any, Any]:
+def heavy_dataset() -> Generator[Any, Any, Any]:
+    cwd = Path.cwd()
+    output_dir = cwd.joinpath('tests','outputs') 
     dataset_object = simulated_data.DummyDataset(root=output_dir)
     dataset_object.create_eeg_dataset(
         fmt='eeglab',
+        n_channels = 16,
         sampling_frequency=5000,
         duration = 25,
+        misc_channels = ['ecg', 'emg'],
         events_kwargs=dict(
             name = 'R128',
             number = 10,
@@ -37,7 +36,7 @@ def heavy_dataset(output_dir) -> Generator[Any, Any, Any]:
             stop = 21,
     )
     )
-    bids_path = heavy_dataset.bids_path
+    bids_path = dataset_object.bids_path
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.set')
     cleaner = cp.CleanerPipelines(bids_files[0])
@@ -125,7 +124,7 @@ def test_save_raw_method(light_dataset):
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.set')
     cleaner = cp.CleanerPipelines(bids_files[0])
-    cleaner.raw = simulated_data.simulate_eeg_data()
+    cleaner.raw = simulated_data.simulate_light_eeg_data()
     cleaner.process_history = list()
     procedures = ['GRAD', 'ASR', 'PYPREP']
     for procedure in procedures:
@@ -148,7 +147,7 @@ def test_decorator_pipe(light_dataset):
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.set')
     cleaner = cp.CleanerPipelines(bids_files[0])
-    cleaner.raw = simulated_data.simulate_eeg_data()
+    cleaner.raw = simulated_data.simulate_light_eeg_data()
     procedures = 'TEST_PIPE'
     cleaner.function_testing_decorator()
 

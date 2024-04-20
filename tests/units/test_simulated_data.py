@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import os
 from pathlib import Path
-from simulated_data import simulate_eeg_data, DummyDataset
+from simulated_data import simulate_eeg_data, simulate_light_eeg_data, DummyDataset
 
 @pytest.fixture
 def raw_data():
@@ -17,9 +17,26 @@ def testing_path():
     output_dir = cwd.joinpath('tests','outputs') 
     return output_dir
     
-def test_returns_instance_of_rawarray():
-    result = simulate_eeg_data()
+def test_simulate_light_eeg_data():
+    result = simulate_light_eeg_data()
     assert isinstance(result, mne.io.RawArray)
+
+def test_simulate_heavy_eeg_data():
+    result = simulate_eeg_data(
+        n_channels = 16,
+        duration = 3,
+        misc_channels= ['ecg', 'emg'],
+        sampling_frequency=256,
+        events_kwargs=dict(
+            name = 'testing_event',
+            number = 2,
+            start = 0.5,
+            stop = 2.5
+        )
+    )
+    assert isinstance(result, mne.io.RawArray)
+    assert result.annotations.description[0] == 'testing_event'
+    assert len(result.annotations.onset) == 2
 
 # The function is called with n_channels = 0.
 def test_called_with_n_channels_zero():
@@ -27,11 +44,10 @@ def test_called_with_n_channels_zero():
         simulate_eeg_data(n_channels=0)
 
 def test_dummy_dataset_called_with_zeros():
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         dataset = DummyDataset(n_subjects=0, 
                      n_sessions=0, 
                      n_runs=0)
-        print(e)
         
 def test_participant_metadata():
     dataset = DummyDataset(n_subjects = 5)
@@ -88,9 +104,13 @@ def test_extract_entities_from_path(testing_path):
 
 def test_create_sidecar_json(testing_path):
     dataset = DummyDataset(root = testing_path)
+    for content in testing_path.iterdir():
+        if 'temporary_directory_generated_' in content.name:
+            temporary_directory = content
+            break
     eeg_filename = 'sub-001_ses-001_task-test_run-001_eeg.vhdr'
     base_eeg_filename, _ = os.path.splitext(eeg_filename)
-    eeg_path = testing_path.joinpath('RAW', 
+    eeg_path = temporary_directory.joinpath('RAW', 
                                    'sub-001', 
                                    'ses-001', 
                                    'eeg')
@@ -100,9 +120,9 @@ def test_create_sidecar_json(testing_path):
     asserting_path = eeg_path.joinpath(base_eeg_filename + '.json')
     assert asserting_path.exists()
 
-def test_eeg_dataset(testing_path):
+def test_method_create_eeg_dataset(testing_path):
     dataset = DummyDataset(root = testing_path)
-    dataset.create_eeg_dataset()
+    dataset.create_eeg_dataset(light = True)
     for content in testing_path.iterdir():
         if 'temporary_directory_generated_' in content.name:
             temporary_directory = content
@@ -122,10 +142,11 @@ def test_eeg_dataset(testing_path):
         eeg_path = asserting_path.joinpath(filename)
         assert eeg_path.exists()
 
-def test_eeg_dataset_annotations(testing_path):
+def test_method_create_eeg_dataset_annotations(testing_path):
     dataset = DummyDataset(root = testing_path)
     dataset.create_eeg_dataset(
         fmt = 'eeglab',
+        light = False,
         duration = 10,
         events_kwargs = dict(
             name = 'testing_event',

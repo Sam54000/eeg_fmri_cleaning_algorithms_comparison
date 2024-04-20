@@ -95,7 +95,6 @@ def simulate_eeg_data(
 
     if misc_channels:
         misc_channels_object_list = list()
-        channel_names.append(misc_channels)
         if 'ecg' in misc_channels:
             ecg = nk.ecg_simulate(duration=duration, 
                                   sampling_rate=sampling_frequency)
@@ -103,21 +102,26 @@ def simulate_eeg_data(
             eeg_data[ch_names.index('T8'),:] *= (ecg * 2)*1e-6
             eeg_data[ch_names.index('T7'),:] *= - (ecg * 2)*1e-6
             ecg = np.expand_dims(ecg, axis=0)
-            raw_ecg = RawArray(ecg, create_info(['ecg'], sampling_frequency))
+            raw_ecg = RawArray(
+                ecg, 
+                create_info(['ECG'], sampling_frequency,ch_types='ecg'))
             misc_channels_object_list.append(raw_ecg)
             
         if 'emg' in misc_channels:
             emg = nk.emg_simulate(duration=duration, 
                                   sampling_rate=sampling_frequency)
             emg = np.expand_dims(emg, axis=0)
-            raw_emg = RawArray(emg, create_info(['emg'], sampling_frequency))
+            raw_emg = RawArray(
+                emg, 
+                create_info(['EMG'], sampling_frequency, ch_types='emg'))
             misc_channels_object_list.append(raw_emg)
-        raw.add_channels(misc_channels_object_list)
 
     info = create_info(channel_names, sampling_frequency, ch_types='eeg')
     raw = RawArray(eeg_data, info)
     raw.rename_channels(channel_mapping)
     raw.set_montage(montage)
+    if misc_channels:
+        raw.add_channels(misc_channels_object_list)
 
     if events_kwargs:
         
