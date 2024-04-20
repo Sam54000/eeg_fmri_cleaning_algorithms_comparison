@@ -229,30 +229,6 @@ class DummyDataset:
         self.root = Path(self.temporary_directory.name)
         self.bids_path = self.root.joinpath(self.data_folder)
         
-    def pipe(func) -> FunctionType:
-        """Decorator that pipes to the folder creation and saving methods.
-
-        Args:
-            func (FunctionType): The function to decorate.
-
-        Returns:
-            FunctionType: The decorated function.
-        """
-        @functools.wraps(func)
-        def wrapper_decorator(self,
-                              *args: Any, 
-                              **kwargs: Any) -> Any:
-            # Call the method itself
-            result = func(self, *args, **kwargs)
-            # Then call the other methods
-            self._make_derivatives_saving_path()
-            self._save_raw()
-            self._copy_sidecar()
-            # Return the result of the original function call
-            return result
-        
-        return cast(FunctionType, wrapper_decorator)
-    
     def _add_participant_metadata(
         self, 
         participant_id: str,

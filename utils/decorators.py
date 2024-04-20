@@ -20,7 +20,9 @@ def pipe(func: FunctionType) -> FunctionType:  # noqa: ANN001
                           *args: tuple, 
                           **kwargs: dict[str, Any]) -> None:  # noqa: ANN002
         func(self,*args, **kwargs)
-        self._make_derivatives_saving_path()
+        self._make_process_path()
+        self._make_subject_session_path()
+        self._make_modality_path()
         self._save_raw()
         self._copy_sidecar()
     return cast(FunctionType, wrapper_decorator)

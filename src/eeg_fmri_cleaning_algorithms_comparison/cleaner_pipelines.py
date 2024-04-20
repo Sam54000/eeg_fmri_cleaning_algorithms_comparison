@@ -46,20 +46,6 @@ from eeg_fmri_cleaning.utils import read_raw_eeg
 from simulated_data import simulate_eeg_data
 
 
-def write_report(message: str, filename: str | os.PathLike) -> None:
-    """Append a message to a txt file.
-
-    Args:
-        message (str): The message to append.
-        filename (str | os.PathLike): The file to append the message.
-    """
-    if isinstance(filename, os.PathLike) or isinstance(filename, str):
-        print(f"filename: {filename}")
-        with open(filename, "a") as f:
-            f.write(message)
-            f.write("\n")
-    else:
-        raise ValueError("The filename must be a string or a Path object.")
 
 
 class CleanerPipelines:
@@ -69,6 +55,10 @@ class CleanerPipelines:
         self.entities = BIDSFile.get_entities()
         self.rawdata_path = Path(BIDSFile.path)
         self.process_history = list()
+        self._make_derivatives_path()
+
+    def _task_is(self, task_name: str) -> bool:
+        return self.BIDSFile.get_entities()["task"] == task_name
 
     def read_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Read the raw EEG data using MNE."""
@@ -78,8 +68,23 @@ class CleanerPipelines:
             print(f"Error while reading the raw data: {e}")
         return self
 
-    def _make_derivatives_saving_path(
-        self: "CleanerPipelines") -> "CleanerPipelines":
+    def _make_derivatives_path(self: "CleanerPipelines") -> "CleanerPipelines":
+        """Create the path to save the cleaned files in the BIDS format.
+
+        It is a file specific path that is generated based on the BIDSFile
+        object.
+        """
+        path_parts = list(self.rawdata_path.parts)
+        rawdata_dirname = [
+            name for name in path_parts if "raw" in name.lower()
+            ][0]
+        path_parts[path_parts.index(rawdata_dirname)] = "DERIVATIVES"
+        derivatives_path_parts = path_parts[:path_parts.index("DERIVATIVES")+1]
+        self.derivatives_path = Path(*derivatives_path_parts)
+        self.derivatives_path.mkdir(parents=True, exist_ok=True)
+        return self
+    
+    def _make_process_path(self: "CleanerPipelines") -> "CleanerPipelines":
         """Create the path to save the cleaned files in the BIDS format.
 
         It is a file specific path that is generated based on the BIDSFile
@@ -89,21 +94,59 @@ class CleanerPipelines:
             added_folder (str, optional): The folder to be added after the 
                                           derivatives one.
         """
-        path_parts = list(self.rawdata_path.parts)
-        rawdata_dirname = [
-            name for name in path_parts if "raw" in name.lower()
-            ][0]
-        path_parts[path_parts.index(rawdata_dirname)] = "DERIVATIVES"
         if len(self.process_history) > 1:
             added_folder = "_".join(self.process_history)
         else:
-            added_folder = self.process_history[0]
-        path_parts.insert(path_parts.index("DERIVATIVES") + 1, added_folder)
-            
-        filename = Path(*path_parts)
-        self.derivatives_path = filename.parent
-        self.derivatives_path.mkdir(parents=True, exist_ok=True)
+                added_folder = self.process_history[0]
+        
+        self.process_path = self.derivatives_path.joinpath(added_folder)
+        self.process_path.mkdir(parents=True, exist_ok=True)
         return self
+    
+                
+    def _make_subject_session_path(self: "CleanerPipelines") -> "CleanerPipelines":
+        """Create the path to save the cleaned files in the BIDS format.
+
+        It is a file specific path that is generated based on the BIDSFile
+        object.
+
+        Args:
+            added_folder (str, optional): The folder to be added after the 
+                                          derivatives one.
+        """
+        if self.process_path:
+            self.subject_session_path = self.process_path.joinpath(
+                f"sub-{self.entities["subject"]}",
+                f"ses-{self.entities["session"]}"
+            )
+            self.subject_session_path.mkdir(parents=True, exist_ok=True)
+            return self
+        else:
+            raise ValueError(
+                """The process path is not defined. 
+                Run the method _make_process_path first."""
+                )
+
+    def _make_modality_path(
+        self: "CleanerPipelines",
+        modality:str = 'eeg') -> "CleanerPipelines":
+        """Create the path to save the cleaned files in the BIDS format.
+
+        It is a file specific path that is generated based on the BIDSFile
+        object.
+
+        Args:
+            modality (str, optional): The modality used (eeg, mri, etc.)
+        """
+        if self.subject_session_path:
+            self.modality_path = self.subject_session_path.joinpath(modality)
+            self.modality_path.mkdir(parents=True, exist_ok=True)
+            return self
+        else:
+            raise ValueError(
+                """The process path is not defined. 
+                Run the method _make_subject_session_path first."""
+                )
 
     def _copy_sidecar(self: "CleanerPipelines") -> None:
         """Copy the sidecar file to the derivative folder.
@@ -114,55 +157,50 @@ class CleanerPipelines:
         """
         base_filename, _ = os.path.splitext(self.BIDSFile.filename)
         source_sidecar_path = self.rawdata_path.parent
-        json_filename = base_filename+ ".json"
-
-        source_sidecar_filename = os.path.join(
-            source_sidecar_path, 
-            json_filename
-            )
+        source_json_filename = source_sidecar_path.joinpath(
+            base_filename).with_suffix(".json")
+        print(source_json_filename)
         
-        print(f"source: {source_sidecar_filename}")
+        destination_json_filename = self.modality_path.joinpath(
+            base_filename).with_suffix(".json")
 
-        destination_sidecar_filename = os.path.join(
-            self.derivatives_path, 
-            json_filename
-        )
-        
-        print(f"destination: {destination_sidecar_filename}")
-
-        if os.path.isfile(source_sidecar_filename):
-            shutil.copyfile(source_sidecar_filename,
-                            destination_sidecar_filename)
+        if source_json_filename.is_file():
+            shutil.copyfile(source_json_filename,
+                            destination_json_filename)
         else:
-            message = f"""The sidecar file {source_sidecar_filename} does not exist."""
+            message = f"""The sidecar file {source_json_filename} does not exist."""
             print(message)
 
     def _save_raw(self: "CleanerPipelines") -> "CleanerPipelines":
         """Save the cleaned raw EEG data in the BIDS format."""
 
-        saving_path = self.derivatives_path
+       
         base_filename, _ = os.path.splitext(self.BIDSFile.filename)
         saving_filename = base_filename + ".fif"
-        destination_filename = os.path.join(saving_path, saving_filename)
+        destination_filename = self.modality_path.joinpath(saving_filename)
         self.raw.save(destination_filename, overwrite=True)
         return self
 
     @pipe
-    def clean_gradient(self: "CleanerPipelines") -> "CleanerPipelines":
+    def run_clean_gradient_and_bcg(self: "CleanerPipelines") -> "CleanerPipelines":
+        """Clean the gradient and BCG artifacts from the EEG data."""
+        self.raw = clean_gradient(self.raw)
+        self.raw = clean_bcg(self.raw)
+        self.process_history += ["GRAD","BCG"]
+        return self
+    @pipe
+    def run_clean_gradient(self: "CleanerPipelines") -> "CleanerPipelines":
         """Clean the gradient artifacts from the EEG data."""
         self.raw = clean_gradient(self.raw)
         self.process_history.append("GRAD")
         return self
 
     @pipe
-    def clean_bcg(self: "CleanerPipelines") -> "CleanerPipelines":
+    def run_clean_bcg(self: "CleanerPipelines") -> "CleanerPipelines":
         """Clean the BCG artifacts from the EEG data."""
         self.raw = clean_bcg(self.raw)
         self.process_history.append("BCG")
         return self
-
-    def _task_is(self, task_name: str) -> bool:
-        return self.BIDSFile.get_entities()["task"] == task_name
 
     @pipe
     def run_pyprep(self: "CleanerPipelines",
@@ -218,3 +256,15 @@ class CleanerPipelines:
         print("This is a test function.")
         self.raw = simulate_eeg_data()
         self.process_history.append("TEST_PIPE")
+
+    def write_report(self, message: str) -> None:
+        """Append a message to a txt file.
+
+        Args:
+            message (str): The message to append.
+            filename (str | os.PathLike): The file to append the message.
+        """
+        filename = self.derivatives_path.joinpath("report.txt")
+        with open(filename, "a") as f:
+            f.write(message)
+            f.write("\n")

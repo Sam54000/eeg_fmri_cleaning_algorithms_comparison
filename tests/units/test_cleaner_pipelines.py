@@ -11,10 +11,19 @@ import simulated_data
 import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
 
 @pytest.fixture
+def dataset_structure() -> Generator[Dict[str, Any], None, None]:
+    cwd = Path.cwd()
+    output_dir = cwd.joinpath('tests','outputs') 
+    dataset_object = simulated_data.DummyDataset(root=output_dir,
+                                                 flush=False)
+    return dataset_object
+
+@pytest.fixture
 def light_dataset() -> Generator[Any, Any, Any]:
     cwd = Path.cwd()
     output_dir = cwd.joinpath('tests','outputs') 
-    dataset_object = simulated_data.DummyDataset(root=output_dir)
+    dataset_object = simulated_data.DummyDataset(root=output_dir,
+                                                 flush=True)
     dataset_object.create_eeg_dataset(light = True, fmt='eeglab')
     yield dataset_object
 
@@ -22,7 +31,8 @@ def light_dataset() -> Generator[Any, Any, Any]:
 def heavy_dataset() -> Generator[Any, Any, Any]:
     cwd = Path.cwd()
     output_dir = cwd.joinpath('tests','outputs') 
-    dataset_object = simulated_data.DummyDataset(root=output_dir)
+    dataset_object = simulated_data.DummyDataset(root=output_dir,
+                                                 flush=False)
     dataset_object.create_eeg_dataset(
         fmt='eeglab',
         n_channels = 16,
@@ -45,22 +55,18 @@ def heavy_dataset() -> Generator[Any, Any, Any]:
     yield cleaner
 
 
-def test_append_message_to_txt_file() -> None:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        message = "This is a test message"
-        filename = "test.txt"
-        file_path = os.path.join(temp_dir, filename)
+def test_append_message_to_txt_file(light_dataset) -> None:
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    print(cleaner.derivatives_path)
+    message = "This is a test message"
+    cleaner.write_report(message)
+    with open(cleaner.derivatives_path.joinpath('report.txt'), 'r') as f:
+        assert f.read() == message+"\n"
+        
 
-        # Call the function under test
-        cp.write_report(message, file_path)
-
-        # Check that the file was created and contains the correct message
-        assert os.path.exists(file_path)
-        with open(file_path, "r") as file:
-            mapping =  dict.fromkeys(range(32))
-            output_str = file.read()
-            res = output_str.translate(mapping)
-            assert res == message
 
 def test_filename_argument_is_none() -> None:
     # Call the function under test with a filename argument
@@ -69,14 +75,32 @@ def test_filename_argument_is_none() -> None:
     except ValueError as e:
         assert str(e) == "The filename must be a string or a Path object."
 
-def test_make_saving_path(light_dataset) -> None:
+def test_make_derivatives_path(light_dataset) -> None:
     bids_path = light_dataset.bids_path
     bids_layout = bids.layout.BIDSLayout(bids_path)
     bids_files = bids_layout.get(extension = '.set')
-    temp_dataset = {'bids_files': bids_files, 'bids_path': bids_path}
-    bids_file = temp_dataset['bids_files'][0]
-    bids_path = temp_dataset['bids_path']
-    cleaner = cp.CleanerPipelines(bids_file)
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    cwd = Path.cwd()
+    test_output_path = cwd.joinpath('tests','outputs')
+    for folder in test_output_path.iterdir():
+        if 'temporary_directory_generated_' in folder.name:
+            temporary_directory = folder
+            break
+    expected_path = temporary_directory.joinpath('DERIVATIVES')
+    
+    assert str(cleaner.derivatives_path) == str(expected_path)
+
+def test_make_process_path(light_dataset) -> None:
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    cwd = Path.cwd()
+    test_output_path = cwd.joinpath('tests','outputs')
+    for folder in test_output_path.iterdir():
+        if 'temporary_directory_generated_' in folder.name:
+            temporary_directory = folder
+            break
     cleaner.process_history = list()
     process = list()
     procedures = ['GRAD', 'ASR', 'PYPREP']
@@ -87,14 +111,76 @@ def test_make_saving_path(light_dataset) -> None:
             added_folder = "_".join(process)
         else:
             added_folder = process[0]
-        cleaner._make_derivatives_saving_path()
-        expected_path = bids_path.parent.joinpath(
-                f'DERIVATIVES/{added_folder}',
+        cleaner._make_process_path()
+        expected_path = temporary_directory.joinpath(
+                'DERIVATIVES',
+                added_folder,
+            )
+        assert str(cleaner.process_path) == str(expected_path)
+
+def test_make_subject_session_path(light_dataset) -> None:
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    cwd = Path.cwd()
+    test_output_path = cwd.joinpath('tests','outputs')
+    for folder in test_output_path.iterdir():
+        if 'temporary_directory_generated_' in folder.name:
+            temporary_directory = folder
+            break
+    cleaner.process_history = list()
+    process = list()
+    procedures = ['GRAD', 'ASR', 'PYPREP']
+    for procedure in procedures:
+        cleaner.process_history.append(procedure) 
+        process.append(procedure)
+        if len(process) > 1:
+            added_folder = "_".join(process)
+        else:
+            added_folder = process[0]
+        cleaner._make_process_path()
+        cleaner._make_subject_session_path()
+        expected_path = temporary_directory.joinpath(
+                'DERIVATIVES',
+                added_folder,
+                'sub-001',
+                'ses-001'
+            )
+        assert str(cleaner.subject_session_path) == str(expected_path)
+
+def test_make_modality_path(light_dataset) -> None:
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    cwd = Path.cwd()
+    test_output_path = cwd.joinpath('tests','outputs')
+    for folder in test_output_path.iterdir():
+        if 'temporary_directory_generated_' in folder.name:
+            temporary_directory = folder
+            break
+    cleaner.process_history = list()
+    process = list()
+    procedures = ['GRAD', 'ASR', 'PYPREP']
+    for procedure in procedures:
+        cleaner.process_history.append(procedure) 
+        process.append(procedure)
+        if len(process) > 1:
+            added_folder = "_".join(process)
+        else:
+            added_folder = process[0]
+        cleaner._make_process_path()
+        cleaner._make_subject_session_path()
+        cleaner._make_modality_path()
+        expected_path = temporary_directory.joinpath(
+                'DERIVATIVES',
+                added_folder,
                 'sub-001',
                 'ses-001',
                 'eeg'
             )
-        assert str(cleaner.derivatives_path) == str(expected_path)
+        assert str(cleaner.modality_path) == str(expected_path)
         
 def test_sidecare_copied_at_correct_location(light_dataset):
     bids_path = light_dataset.bids_path
@@ -106,10 +192,12 @@ def test_sidecare_copied_at_correct_location(light_dataset):
     procedures = ['GRAD', 'ASR', 'PYPREP']
     for procedure in procedures:
         cleaner.process_history.append(procedure) 
-        cleaner._make_derivatives_saving_path()
+        cleaner._make_process_path()
+        cleaner._make_subject_session_path()
+        cleaner._make_modality_path()
         cleaner._copy_sidecar()
 
-        path = cleaner.derivatives_path
+        path = cleaner.modality_path
 
         expected_filename = path.joinpath(
             'sub-001_ses-001_task-test_run-001_eeg.json'
@@ -117,7 +205,7 @@ def test_sidecare_copied_at_correct_location(light_dataset):
 
         print(expected_filename)
 
-        assert os.path.exists(str(expected_filename))
+        assert expected_filename.exists()
     
 def test_save_raw_method(light_dataset):
     bids_path = light_dataset.bids_path
@@ -129,17 +217,15 @@ def test_save_raw_method(light_dataset):
     procedures = ['GRAD', 'ASR', 'PYPREP']
     for procedure in procedures:
         cleaner.process_history.append(procedure) 
-        cleaner._make_derivatives_saving_path()
+        cleaner._make_process_path()
+        cleaner._make_subject_session_path()
+        cleaner._make_modality_path()
         cleaner._copy_sidecar()
         cleaner._save_raw()
-        path = cleaner.derivatives_path
 
-        expected_filename = Path(
-            os.path.join(
-                str(path),
+        expected_filename = cleaner.modality_path.joinpath(
                 'sub-001_ses-001_task-test_run-001_eeg.fif'
             )
-        )
         assert os.path.isfile(expected_filename)
 
 def test_decorator_pipe(light_dataset):
@@ -170,18 +256,64 @@ def test_decorator_pipe(light_dataset):
 
 class TestRunsCleanerPipelines:
     def test_run_clean_gradient(self, heavy_dataset):
-        heavy_dataset.clean_gradient()
+        heavy_dataset.run_clean_gradient()
+        cwd = Path.cwd()
+        testing_path = cwd.joinpath('tests','outputs')
+        for content in testing_path.iterdir():
+            if 'temporary_directory_generated_' in content.name:
+                temporary_directory = content
+                break
+        expected_saving_path = Path(
+            os.path.join(
+                temporary_directory,
+                'DERIVATIVES',
+                'GRAD',
+                'sub-001',
+                'ses-001',
+                'eeg'
+            )
+        )
+        eeg_filename = 'sub-001_ses-001_task-test_run-001_eeg.fif'
+        json_filename = 'sub-001_ses-001_task-test_run-001_eeg.json'
+        expected_eeg_filename = os.path.join(expected_saving_path, eeg_filename)
+        expected_json_filename = os.path.join(expected_saving_path, json_filename)
+        assert os.path.isfile(expected_eeg_filename)
+        assert os.path.isfile(expected_json_filename)
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
         assert isinstance(heavy_dataset, cp.CleanerPipelines)
         
     def test_run_clean_bcg(self, heavy_dataset):
-        heavy_dataset.clean_bcg()
+        heavy_dataset.run_clean_bcg()
+        cwd = Path.cwd()
+        testing_path = cwd.joinpath('tests','outputs')
+        for content in testing_path.iterdir():
+            if 'temporary_directory_generated_' in content.name:
+                temporary_directory = content
+                break
+        expected_saving_path = Path(
+            os.path.join(
+                temporary_directory,
+                'DERIVATIVES',
+                'BCG',
+                'sub-001',
+                'ses-001',
+                'eeg'
+            )
+        )
+        eeg_filename = 'sub-001_ses-001_task-test_run-001_eeg.fif'
+        json_filename = 'sub-001_ses-001_task-test_run-001_eeg.json'
+        expected_eeg_filename = os.path.join(expected_saving_path, eeg_filename)
+        expected_json_filename = os.path.join(expected_saving_path, json_filename)
+        assert os.path.isfile(expected_eeg_filename)
+        assert os.path.isfile(expected_json_filename)
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
         assert isinstance(heavy_dataset, cp.CleanerPipelines)
 
     def test_run_pyprep(self, heavy_dataset):
+        #Pyprep crashes because it doesn't like my simulated data.
+        #It thinks that there is too many bad electrodes.
         heavy_dataset.run_pyprep(montage_name='biosemi16')
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
@@ -189,12 +321,56 @@ class TestRunsCleanerPipelines:
 
     def test_run_asr(self, heavy_dataset):
         heavy_dataset.run_asr()
+        cwd = Path.cwd()
+        testing_path = cwd.joinpath('tests','outputs')
+        for content in testing_path.iterdir():
+            if 'temporary_directory_generated_' in content.name:
+                temporary_directory = content
+                break
+        expected_saving_path = Path(
+            os.path.join(
+                temporary_directory,
+                'DERIVATIVES',
+                'BCG',
+                'sub-001',
+                'ses-001',
+                'eeg'
+            )
+        )
+        eeg_filename = 'sub-001_ses-001_task-test_run-001_eeg.fif'
+        json_filename = 'sub-001_ses-001_task-test_run-001_eeg.json'
+        expected_eeg_filename = os.path.join(expected_saving_path, eeg_filename)
+        expected_json_filename = os.path.join(expected_saving_path, json_filename)
+        assert os.path.isfile(expected_eeg_filename)
+        assert os.path.isfile(expected_json_filename)
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
         assert isinstance(heavy_dataset, cp.CleanerPipelines)
 
     def test_chain(self, heavy_dataset):
-        heavy_dataset.read_raw().clean_gradient().clean_bcg().run_pyprep().run_asr()
+        heavy_dataset.run_clean_gradient_and_bcg()
+        cwd = Path.cwd()
+        testing_path = cwd.joinpath('tests','outputs')
+        for content in testing_path.iterdir():
+            if 'temporary_directory_generated_' in content.name:
+                temporary_directory = content
+                break
+        expected_saving_path = Path(
+            os.path.join(
+                temporary_directory,
+                'DERIVATIVES',
+                'GRAD_BCG',
+                'sub-001',
+                'ses-001',
+                'eeg'
+            )
+        )
+        eeg_filename = 'sub-001_ses-001_task-test_run-001_eeg.fif'
+        json_filename = 'sub-001_ses-001_task-test_run-001_eeg.json'
+        expected_eeg_filename = os.path.join(expected_saving_path, eeg_filename)
+        expected_json_filename = os.path.join(expected_saving_path, json_filename)
+        assert os.path.isfile(expected_eeg_filename)
+        assert os.path.isfile(expected_json_filename)
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
         assert isinstance(heavy_dataset, cp.CleanerPipelines)
