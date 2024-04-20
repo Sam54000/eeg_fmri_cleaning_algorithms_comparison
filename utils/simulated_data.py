@@ -86,7 +86,8 @@ def simulate_eeg_data(
     eeg_data = np.zeros((n_channels, duration * sampling_frequency))
     for channel in range(n_channels):
         eeg_data[channel,:] = nk.eeg_simulate(duration=duration, 
-                                sampling_rate=sampling_frequency)
+                                sampling_rate=sampling_frequency,
+                                noise= 0.01)
 
     channel_names = [str(i) for i in range(n_channels)]
     montage = mne.channels.make_standard_montage('biosemi16')
@@ -104,7 +105,7 @@ def simulate_eeg_data(
             ecg = np.expand_dims(ecg, axis=0)
             raw_ecg = RawArray(
                 ecg, 
-                create_info(['ECG'], sampling_frequency,ch_types='ecg'))
+                create_info(['ecg'], sampling_frequency,ch_types='ecg'))
             misc_channels_object_list.append(raw_ecg)
             
         if 'emg' in misc_channels:
@@ -113,13 +114,13 @@ def simulate_eeg_data(
             emg = np.expand_dims(emg, axis=0)
             raw_emg = RawArray(
                 emg, 
-                create_info(['EMG'], sampling_frequency, ch_types='emg'))
+                create_info(['emg'], sampling_frequency, ch_types='emg'))
             misc_channels_object_list.append(raw_emg)
 
     info = create_info(channel_names, sampling_frequency, ch_types='eeg')
     raw = RawArray(eeg_data, info)
     raw.rename_channels(channel_mapping)
-    raw.set_montage(montage)
+    raw.set_montage(montage, on_missing='ignore')
     if misc_channels:
         raw.add_channels(misc_channels_object_list)
 
@@ -161,6 +162,7 @@ class DummyDataset:
         subjects_label_str: Optional[str] = None,
         data_folder: str = "RAW",
         root: Optional[Union[str, os.PathLike]] = None,
+        flush: bool = True,
     ) -> None:
         """Initialize the DummyDataset object.
 
@@ -216,7 +218,7 @@ class DummyDataset:
             prefix='temporary_directory_generated_', 
             dir=root, 
             ignore_cleanup_errors=False,
-            delete=True
+            delete=flush
         )
         self.root = Path(self.temporary_directory.name)
         self.bids_path = self.root.joinpath(self.data_folder)

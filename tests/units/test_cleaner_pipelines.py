@@ -28,7 +28,7 @@ def heavy_dataset() -> Generator[Any, Any, Any]:
         n_channels = 16,
         sampling_frequency=5000,
         duration = 25,
-        misc_channels = ['ecg', 'emg'],
+        misc_channels = ['ecg'],
         events_kwargs=dict(
             name = 'R128',
             number = 10,

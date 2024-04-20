@@ -176,13 +176,21 @@ class CleanerPipelines:
             mne.io.Raw: The cleaned EEG data.
         """
         montage = mne.channels.make_standard_montage(montage_name)
-        self.raw.set_montage(montage)
+        self.raw.set_montage(montage, on_missing="ignore")
         prep_params = {
             "ref_chs": "eeg",
             "reref_chs": "eeg",
             "line_freqs": np.arange(60, self.raw.info["sfreq"] / 2, 60),
         }
-        prep = pyprep.PrepPipeline(self.raw, prep_params, channel_wise=True)
+        # Montages are set like twice there is a lot of redundancy, I need to fix
+        # it.
+        prep = pyprep.PrepPipeline(self.raw, 
+                                   prep_params,
+                                   montage,
+                                   channel_wise=True)
+        # Pyprep doesn't like emg channels. I will need to submit an issue to
+        # see if we can add the montage parameters in the pyprep configuration.
+        
         prep.fit()
         self.raw = prep.raw
         self.process_history.append("PREP")
