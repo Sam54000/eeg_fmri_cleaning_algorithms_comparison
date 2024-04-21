@@ -43,14 +43,12 @@ def run_cbin_cleaner(cleaner) -> None:  # noqa: D103
 def run_cbin_cleaner_asr(cleaner) -> None:  # noqa: D103
     cleaner = run_cbin_cleaner(cleaner)
     cleaner.run_asr()
-    return "run_cbin_cleaner_asr"
 
 
 def run_cbin_cleaner_pyprep_asr(cleaner) -> None:  # noqa: D103
     cleaner = run_cbin_cleaner(cleaner)
     cleaner.run_pyprep()
     cleaner.run_asr()
-    return "run_cbin_cleaner_pyprep_asr"
     
 def main(reading_path):
    
@@ -61,9 +59,6 @@ def main(reading_path):
         cleaner = CleanerPipelines(BIDSFile_object)
         if any([BIDSFile_object.task == "checker",
                 BIDSFile_object.task == "checkeroff"]):
-            #
-            # The problem is here don't make a list of functions
-            #
             try:
                 pipeline_function = run_cbin_cleaner(cleaner)
                 pipeline_function = run_cbin_cleaner_asr(cleaner)

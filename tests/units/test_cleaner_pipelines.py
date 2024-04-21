@@ -2,6 +2,7 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Generator
+import numpy as np
 
 import bids
 import mne
@@ -23,6 +24,7 @@ def light_dataset() -> Generator[Any, Any, Any]:
     cwd = Path.cwd()
     output_dir = cwd.joinpath('tests','outputs') 
     dataset_object = simulated_data.DummyDataset(root=output_dir,
+                                                 task='test',
                                                  flush=True)
     dataset_object.create_eeg_dataset(light = True, fmt='eeglab')
     yield dataset_object
@@ -182,6 +184,17 @@ def test_make_modality_path(light_dataset) -> None:
             )
         assert str(cleaner.modality_path) == str(expected_path)
         
+def test_task_is_test(light_dataset) -> None:
+    bids_path = light_dataset.bids_path
+    bids_layout = bids.layout.BIDSLayout(bids_path)
+    bids_files = bids_layout.get(extension = '.set')
+    cleaner = cp.CleanerPipelines(bids_files[0])
+    cleaner.process_history = list()
+    procedures = ['GRAD', 'ASR', 'PYPREP']
+    for procedure in procedures:
+        cleaner.process_history.append(procedure) 
+        assert cleaner._task_is('test')
+        
 def test_sidecare_copied_at_correct_location(light_dataset):
     bids_path = light_dataset.bids_path
     bids_layout = bids.layout.BIDSLayout(bids_path)
@@ -282,6 +295,8 @@ class TestRunsCleanerPipelines:
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
         assert isinstance(heavy_dataset, cp.CleanerPipelines)
+        assert heavy_dataset.raw.get_data().shape == (17, 125000)
+        assert np.max(heavy_dataset.raw.get_data()) > 0
         
     def test_run_clean_bcg(self, heavy_dataset):
         heavy_dataset.run_clean_bcg()
@@ -374,3 +389,5 @@ class TestRunsCleanerPipelines:
         assert isinstance(heavy_dataset.raw, mne.io.BaseRaw)
         assert len(heavy_dataset.raw.annotations.description) == 10
         assert isinstance(heavy_dataset, cp.CleanerPipelines)
+        assert heavy_dataset.raw.get_data().shape == (17, 6250)
+        assert np.max(heavy_dataset.raw.get_data()) > 0

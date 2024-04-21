@@ -1,6 +1,8 @@
 import pytest
 import simulated_data
 import eeg_fmri_cleaning_algorithms_comparison.main_cleaner_pipelines as mcp
+import eeg_fmri_cleaning_algorithms_comparison.cleaner_pipelines as cp
+import bids
 from pathlib import Path
 
 @pytest.fixture(scope='class')
@@ -32,6 +34,36 @@ def dataset():
         }
                             )
     return data
+class TestFunctions:
+    def test_run_cbin_cleaner(self,dataset):
+        layout = bids.layout.BIDSLayout(dataset.bids_path)
+        files = layout.get(extension='.set')
+        
+        for file in files:
+            cleaner = cp.CleanerPipelines(file)
+            mcp.run_cbin_cleaner(cleaner)
+            
+        cwd = Path.cwd()
+        test_output_path = cwd.joinpath('tests','outputs')
+        for content in test_output_path.iterdir():
+            if 'temporary_directory_generated_' in content.name:
+                temporary_directory = content
+                break
+        
+        files_to_check = list()
+        for subject in dataset.subjects:
+            for session in dataset.sessions:
+                for run in dataset.runs:
+                    files_to_check.append(
+                        temporary_directory.joinpath(
+                        'DERIVATIVES',
+                        'GRAD_BCG',
+                        subject,
+                        session,
+                        f'{subject}_{session}_task-checker_run-{run}_eeg.fif'
+                    )
+                    )
+                    assert files_to_check.exists()
 
 class TestMain:
     def test_main_raw_path_integrity(self,dataset):
