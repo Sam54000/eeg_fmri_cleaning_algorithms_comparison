@@ -29,6 +29,9 @@ import argparse
 import bids
 
 from cleaner_pipelines import CleanerPipelines
+parser = argparse.ArgumentParser(description="Run the cleaning pipelines")
+parser.add_argument("reading_path", type=str, help="Path to the BIDS dataset")
+args = parser.parse_args()
 
 def run_cbin_cleaner(cleaner) -> None:  # noqa: D103
     cleaner.read_raw()
@@ -71,3 +74,6 @@ def main(reading_path):
 
                 """
                 cleaner.write_report(message)
+
+if __name__ == "__main__":
+    main(args.reading_path)
