@@ -204,7 +204,7 @@ class CleanerPipelines:
 
     @pipe
     def run_pyprep(self: "CleanerPipelines",
-                   montage_name = "easycap-M10") -> "CleanerPipelines":
+                   montage_name = "easycap-M1") -> "CleanerPipelines":
         """Clean the EEG data using the PyPrep algorithm.
 
         Args:
