@@ -30,28 +30,29 @@ import bids
 
 from cleaner_pipelines import CleanerPipelines
 parser = argparse.ArgumentParser(description="Run the cleaning pipelines")
-parser.add_argument("reading_path", type=str, help="Path to the BIDS dataset")
+parser.add_argument("--path", type=str, help="Path to the BIDS dataset")
 args = parser.parse_args()
 
-def run_cbin_cleaner(cleaner) -> None:  # noqa: D103
+def run_cbin_cleaner(cleaner: CleanerPipelines) -> CleanerPipelines:
     cleaner.read_raw()
     if cleaner._task_is("checker"):
         cleaner.run_clean_gradient_and_bcg()
-        return "run_clean_gradient_and_bcg"
     elif cleaner._task_is("checkeroff"):
         cleaner.run_clean_bcg()
-        return "run_clean_bcg"
+    return cleaner
         
 
-def run_cbin_cleaner_asr(cleaner) -> None:  # noqa: D103
+def run_cbin_cleaner_asr(cleaner: CleanerPipelines) -> CleanerPipelines:
     cleaner = run_cbin_cleaner(cleaner)
     cleaner.run_asr()
+    return cleaner
 
 
-def run_cbin_cleaner_pyprep_asr(cleaner) -> None:  # noqa: D103
+def run_cbin_cleaner_pyprep_asr(cleaner: CleanerPipelines) -> CleanerPipelines:
     cleaner = run_cbin_cleaner(cleaner)
     cleaner.run_pyprep()
     cleaner.run_asr()
+    return cleaner
     
 def main(reading_path):
    
@@ -59,21 +60,23 @@ def main(reading_path):
     file_list = layout.get(extension=".set")
 
     for BIDSFile_object in file_list:
-        cleaner = CleanerPipelines(BIDSFile_object)
+        #Totally sub-optimal need to fix it
+        cleaner_cbin = CleanerPipelines(BIDSFile_object)
+        cleaner_cbin_asr = CleanerPipelines(BIDSFile_object)
+        cleaner_cbin_pyprepr_asr = CleanerPipelines(BIDSFile_object)
         if any([BIDSFile_object.task == "checker",
                 BIDSFile_object.task == "checkeroff"]):
             try:
-                pipeline_function = run_cbin_cleaner(cleaner)
-                pipeline_function = run_cbin_cleaner_asr(cleaner)
-                pipeline_function = run_cbin_cleaner_pyprep_asr(cleaner)
+                run_cbin_cleaner(cleaner_cbin)
+                run_cbin_cleaner_asr(cleaner_cbin_asr)
+                run_cbin_cleaner_pyprep_asr(cleaner_cbin_pyprepr_asr)
 
             except Exception as e:
                 message = f"""filename: {str(BIDSFile_object.filename)}
-                process:{pipeline_function}
                 error:{str(e)}
 
                 """
-                cleaner.write_report(message)
+                cleaner_cbin.write_report(message)
 
 if __name__ == "__main__":
-    main(args.reading_path)
+    main(args.path)

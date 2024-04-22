@@ -447,13 +447,13 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
 name = "identify"
-version = "2.5.35"
+version = "2.5.36"
 description = "File identification library for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "identify-2.5.35-py2.py3-none-any.whl", hash = "sha256:c4de0081837b211594f8e877a6b4fad7ca32bbfc1a9307fdd61c28bfe923f13e"},
-    {file = "identify-2.5.35.tar.gz", hash = "sha256:10a7ca245cfcd756a554a7288159f72ff105ad233c7c4b9c6f0f4d108f5f6791"},
+    {file = "identify-2.5.36-py2.py3-none-any.whl", hash = "sha256:37d93f380f4de590500d9dba7db359d0d3da95ffe7f9de1753faa159e71e7dfa"},
+    {file = "identify-2.5.36.tar.gz", hash = "sha256:e5e00f54165f9047fbebeb4a560f9acfb8af4c88232be60a488e9b68d122745d"},
 ]
 
 [package.extras]
@@ -515,6 +515,17 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
+
+[[package]]
+name = "joblib"
+version = "1.4.0"
+description = "Lightweight pipelining with Python functions"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "joblib-1.4.0-py3-none-any.whl", hash = "sha256:42942470d4062537be4d54c83511186da1fc14ba354961a2114da91efa9a4ed7"},
+    {file = "joblib-1.4.0.tar.gz", hash = "sha256:1eb0dc091919cd384490de890cb5dfd538410a6d4b3b54eef09fb8c50b409b1c"},
+]
 
 [[package]]
 name = "kiwisolver"
@@ -768,13 +779,13 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "mne"
-version = "1.6.1"
+version = "1.7.0"
 description = "MNE-Python project for MEG and EEG data analysis."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "mne-1.6.1-py3-none-any.whl", hash = "sha256:4d36517c1eafd2399d8f1fbd62cf9416d8b2ec98cd65b1dfed2876c4220bf0f9"},
-    {file = "mne-1.6.1.tar.gz", hash = "sha256:e4f5683d01cef675eddad788bdb6b44cc015dff0fb1ddfca3c4105edfb757ef8"},
+    {file = "mne-1.7.0-py3-none-any.whl", hash = "sha256:dd3e0b13748b000d11b841316d7f544a1b16af611df80ac2bfe6ade6b8b92fa6"},
+    {file = "mne-1.7.0.tar.gz", hash = "sha256:a6c8fce601e3b3559875825f527da7c72dbd19fcb9d206692f94c98ae5f0fce0"},
 ]
 
 [package.dependencies]
@@ -789,12 +800,12 @@ scipy = ">=1.7.1"
 tqdm = "*"
 
 [package.extras]
-dev = ["mne[doc,test]"]
-doc = ["graphviz", "ipython (!=8.7.0)", "memory-profiler", "mne-bids", "mne-connectivity", "mne-gui-addons", "neo", "numpydoc", "pydata-sphinx-theme (==0.13.3)", "pygments (>=2.13)", "pytest", "pyxdf", "pyzmq (!=24.0.0)", "seaborn (!=0.11.2)", "selenium", "sphinx (>=6)", "sphinx-copybutton", "sphinx-design", "sphinx-gallery", "sphinxcontrib-bibtex (>=2.5)", "sphinxcontrib-youtube"]
-full = ["EDFlib-Python", "PyQt6 (!=6.6.1)", "PyQt6-Qt6 (!=6.6.1)", "darkdetect", "defusedxml", "dipy", "eeglabio", "h5py", "imageio (>=2.6.1)", "imageio-ffmpeg (>=0.4.1)", "ipyevents", "ipympl", "ipywidgets", "joblib", "jupyter", "mffpy (>=0.5.7)", "mne-qt-browser", "mne[hdf5]", "nibabel", "nilearn", "numba", "numexpr", "openmeeg (>=2.5.5)", "pandas", "psutil", "pybv", "pyobjc-framework-Cocoa (>=5.2.0)", "python-picard", "pyvista (>=0.32,!=0.35.2,!=0.38.0,!=0.38.1,!=0.38.2,!=0.38.3,!=0.38.4,!=0.38.5,!=0.38.6,!=0.42.0)", "pyvistaqt (>=0.4)", "qdarkstyle", "qtpy", "scikit-learn", "sip", "snirf", "statsmodels", "threadpoolctl", "traitlets", "trame", "trame-vtk", "trame-vuetify", "vtk", "xlrd"]
+dev = ["codespell", "graphviz", "ipython (!=8.7.0)", "memory-profiler", "mne-bids", "mne-connectivity", "mne-gui-addons", "mypy", "neo", "numpydoc", "pre-commit", "pydata-sphinx-theme (==0.15.2)", "pygments (>=2.13)", "pytest", "pytest (>=8.0.0rc2)", "pytest-cov", "pytest-qt", "pytest-timeout", "pyxdf", "pyzmq (!=24.0.0)", "rcssmin", "ruff", "seaborn (!=0.11.2)", "selenium", "sphinx (>=6,<7.3)", "sphinx-copybutton", "sphinx-design", "sphinx-gallery", "sphinxcontrib-bibtex (>=2.5)", "sphinxcontrib-towncrier", "sphinxcontrib-youtube", "tomli", "twine", "wheel"]
+doc = ["graphviz", "ipython (!=8.7.0)", "memory-profiler", "mne-bids", "mne-connectivity", "mne-gui-addons", "neo", "numpydoc", "pydata-sphinx-theme (==0.15.2)", "pygments (>=2.13)", "pytest", "pyxdf", "pyzmq (!=24.0.0)", "seaborn (!=0.11.2)", "selenium", "sphinx (>=6,<7.3)", "sphinx-copybutton", "sphinx-design", "sphinx-gallery", "sphinxcontrib-bibtex (>=2.5)", "sphinxcontrib-towncrier", "sphinxcontrib-youtube"]
+full = ["darkdetect", "defusedxml", "dipy", "edfio (>=0.2.1)", "eeglabio", "h5io", "h5py", "imageio (>=2.6.1)", "imageio-ffmpeg (>=0.4.1)", "ipyevents", "ipympl", "ipywidgets", "joblib", "jupyter", "mffpy (>=0.5.7)", "mne-qt-browser", "neo", "nibabel", "nilearn", "numba", "openmeeg (>=2.5.5)", "pandas", "psutil", "pyarrow", "pybv", "pymatreader", "pyobjc-framework-cocoa (>=5.2.0)", "pyqt6 (!=6.6.1)", "pyqt6-qt6 (!=6.6.1,!=6.6.2,!=6.6.3)", "python-picard", "pyvista (>=0.32,!=0.35.2,!=0.38.0,!=0.38.1,!=0.38.2,!=0.38.3,!=0.38.4,!=0.38.5,!=0.38.6,!=0.42.0)", "pyvistaqt (>=0.4)", "qdarkstyle (!=3.2.2)", "qtpy", "scikit-learn", "sip", "snirf", "statsmodels", "threadpoolctl", "traitlets", "trame", "trame-vtk", "trame-vuetify", "vtk", "xlrd"]
 hdf5 = ["h5io", "pymatreader"]
-test = ["black", "check-manifest", "codespell", "numpydoc", "pre-commit", "pytest", "pytest-cov", "pytest-harvest", "pytest-qt", "pytest-timeout", "ruff", "tomli", "twine", "wheel"]
-test-extra = ["EDFlib-Python", "eeglabio", "imageio (>=2.6.1)", "imageio-ffmpeg (>=0.4.1)", "mne[test]", "nbclient", "nitime", "pybv", "snirf", "sphinx-gallery"]
+test = ["codespell", "mypy", "numpydoc", "pre-commit", "pytest (>=8.0.0rc2)", "pytest-cov", "pytest-qt", "pytest-timeout", "ruff", "tomli", "twine", "wheel"]
+test-extra = ["codespell", "edfio (>=0.2.1)", "eeglabio", "imageio (>=2.6.1)", "imageio-ffmpeg (>=0.4.1)", "mne-bids", "mypy", "nbclient", "neo", "nitime", "numpydoc", "pre-commit", "pybv", "pytest (>=8.0.0rc2)", "pytest-cov", "pytest-qt", "pytest-timeout", "ruff", "snirf", "sphinx-gallery", "statsmodels", "tomli", "twine", "wheel"]
 
 [[package]]
 name = "mypy"
@@ -853,6 +864,27 @@ files = [
     {file = "mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d"},
     {file = "mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782"},
 ]
+
+[[package]]
+name = "neurokit2"
+version = "0.2.7"
+description = "The Python Toolbox for Neurophysiological Signal Processing."
+optional = false
+python-versions = "*"
+files = [
+    {file = "neurokit2-0.2.7-py2.py3-none-any.whl", hash = "sha256:960412136d42ec02eca21b20de2f4ba2bce1d9eeabb34153b2e962682ff2ca42"},
+    {file = "neurokit2-0.2.7.tar.gz", hash = "sha256:f7c1fad4536a5491d136681fc44ea814cfc563409198002dd2389ea409b3ab67"},
+]
+
+[package.dependencies]
+matplotlib = "*"
+numpy = "*"
+pandas = "*"
+scikit-learn = ">=1.0.0"
+scipy = "*"
+
+[package.extras]
+test = ["EMD-signal", "EntropyHub", "PyWavelets", "antropy", "astropy", "bioread", "biosppy (==0.6.1)", "coverage", "cvxopt", "matplotlib", "mne[data]", "nolds", "numpy", "pandas", "plotly", "pyentrp", "pytest", "scikit-learn (>=1.0.0)", "scipy", "ts2vg"]
 
 [[package]]
 name = "nibabel"
@@ -1180,13 +1212,13 @@ test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4.3)", "pytest-
 
 [[package]]
 name = "pluggy"
-version = "1.4.0"
+version = "1.5.0"
 description = "plugin and hook calling mechanisms for python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pluggy-1.4.0-py3-none-any.whl", hash = "sha256:7db9f7b503d67d1c5b95f59773ebb58a8c1c288129a88665838012cfb07b8981"},
-    {file = "pluggy-1.4.0.tar.gz", hash = "sha256:8c85c2876142a764e5b7548e7d9a0e0ddb46f5185161049a79b7e974454223be"},
+    {file = "pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669"},
+    {file = "pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1"},
 ]
 
 [package.extras]
@@ -1339,20 +1371,20 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pyprep"
-version = "0.4.2"
+version = "0.4.3"
 description = "A Python implementation of the preprocessing pipeline (PREP) for EEG data."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pyprep-0.4.2-py2.py3-none-any.whl", hash = "sha256:fd73068515c6f33836a40899c8ed38e4daa96e360517e88b93aa938d43ab6efd"},
-    {file = "pyprep-0.4.2.tar.gz", hash = "sha256:1814d4a135c273f5dd03bfeeab2bb5ad92954fdd610e4246b7c2cabc08081c0a"},
+    {file = "pyprep-0.4.3-py2.py3-none-any.whl", hash = "sha256:3150aa7ce8a7134ffe0c884fd9a630a9d284a06768c08e054f3cbfd233cb9873"},
+    {file = "pyprep-0.4.3.tar.gz", hash = "sha256:4e7713f214bdcbb23f1c1f1eb20602e13731961bd33d1b5fc78a1c38d02fbac0"},
 ]
 
 [package.dependencies]
-mne = ">=0.20.0"
-numpy = ">=1.14.1"
+mne = ">=1.3.0"
+numpy = ">=1.20.2"
 psutil = ">=5.4.3"
-scipy = ">=1.0.0"
+scipy = ">=1.6.3"
 
 [[package]]
 name = "pytest"
@@ -1527,6 +1559,48 @@ files = [
 ]
 
 [[package]]
+name = "scikit-learn"
+version = "1.4.2"
+description = "A set of python modules for machine learning and data mining"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "scikit-learn-1.4.2.tar.gz", hash = "sha256:daa1c471d95bad080c6e44b4946c9390a4842adc3082572c20e4f8884e39e959"},
+    {file = "scikit_learn-1.4.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8539a41b3d6d1af82eb629f9c57f37428ff1481c1e34dddb3b9d7af8ede67ac5"},
+    {file = "scikit_learn-1.4.2-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:68b8404841f944a4a1459b07198fa2edd41a82f189b44f3e1d55c104dbc2e40c"},
+    {file = "scikit_learn-1.4.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:81bf5d8bbe87643103334032dd82f7419bc8c8d02a763643a6b9a5c7288c5054"},
+    {file = "scikit_learn-1.4.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:36f0ea5d0f693cb247a073d21a4123bdf4172e470e6d163c12b74cbb1536cf38"},
+    {file = "scikit_learn-1.4.2-cp310-cp310-win_amd64.whl", hash = "sha256:87440e2e188c87db80ea4023440923dccbd56fbc2d557b18ced00fef79da0727"},
+    {file = "scikit_learn-1.4.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:45dee87ac5309bb82e3ea633955030df9bbcb8d2cdb30383c6cd483691c546cc"},
+    {file = "scikit_learn-1.4.2-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:1d0b25d9c651fd050555aadd57431b53d4cf664e749069da77f3d52c5ad14b3b"},
+    {file = "scikit_learn-1.4.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b0203c368058ab92efc6168a1507d388d41469c873e96ec220ca8e74079bf62e"},
+    {file = "scikit_learn-1.4.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44c62f2b124848a28fd695db5bc4da019287abf390bfce602ddc8aa1ec186aae"},
+    {file = "scikit_learn-1.4.2-cp311-cp311-win_amd64.whl", hash = "sha256:5cd7b524115499b18b63f0c96f4224eb885564937a0b3477531b2b63ce331904"},
+    {file = "scikit_learn-1.4.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:90378e1747949f90c8f385898fff35d73193dfcaec3dd75d6b542f90c4e89755"},
+    {file = "scikit_learn-1.4.2-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:ff4effe5a1d4e8fed260a83a163f7dbf4f6087b54528d8880bab1d1377bd78be"},
+    {file = "scikit_learn-1.4.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:671e2f0c3f2c15409dae4f282a3a619601fa824d2c820e5b608d9d775f91780c"},
+    {file = "scikit_learn-1.4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d36d0bc983336bbc1be22f9b686b50c964f593c8a9a913a792442af9bf4f5e68"},
+    {file = "scikit_learn-1.4.2-cp312-cp312-win_amd64.whl", hash = "sha256:d762070980c17ba3e9a4a1e043ba0518ce4c55152032f1af0ca6f39b376b5928"},
+    {file = "scikit_learn-1.4.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:d9993d5e78a8148b1d0fdf5b15ed92452af5581734129998c26f481c46586d68"},
+    {file = "scikit_learn-1.4.2-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:426d258fddac674fdf33f3cb2d54d26f49406e2599dbf9a32b4d1696091d4256"},
+    {file = "scikit_learn-1.4.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5460a1a5b043ae5ae4596b3126a4ec33ccba1b51e7ca2c5d36dac2169f62ab1d"},
+    {file = "scikit_learn-1.4.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:49d64ef6cb8c093d883e5a36c4766548d974898d378e395ba41a806d0e824db8"},
+    {file = "scikit_learn-1.4.2-cp39-cp39-win_amd64.whl", hash = "sha256:c97a50b05c194be9146d61fe87dbf8eac62b203d9e87a3ccc6ae9aed2dfaf361"},
+]
+
+[package.dependencies]
+joblib = ">=1.2.0"
+numpy = ">=1.19.5"
+scipy = ">=1.6.0"
+threadpoolctl = ">=2.0.0"
+
+[package.extras]
+benchmark = ["matplotlib (>=3.3.4)", "memory-profiler (>=0.57.0)", "pandas (>=1.1.5)"]
+docs = ["Pillow (>=7.1.2)", "matplotlib (>=3.3.4)", "memory-profiler (>=0.57.0)", "numpydoc (>=1.2.0)", "pandas (>=1.1.5)", "plotly (>=5.14.0)", "pooch (>=1.6.0)", "scikit-image (>=0.17.2)", "seaborn (>=0.9.0)", "sphinx (>=6.0.0)", "sphinx-copybutton (>=0.5.2)", "sphinx-gallery (>=0.15.0)", "sphinx-prompt (>=1.3.0)", "sphinxext-opengraph (>=0.4.2)"]
+examples = ["matplotlib (>=3.3.4)", "pandas (>=1.1.5)", "plotly (>=5.14.0)", "pooch (>=1.6.0)", "scikit-image (>=0.17.2)", "seaborn (>=0.9.0)"]
+tests = ["black (>=23.3.0)", "matplotlib (>=3.3.4)", "mypy (>=1.3)", "numpydoc (>=1.2.0)", "pandas (>=1.1.5)", "polars (>=0.19.12)", "pooch (>=1.6.0)", "pyamg (>=4.0.0)", "pyarrow (>=12.0.0)", "pytest (>=7.1.2)", "pytest-cov (>=2.9.0)", "ruff (>=0.0.272)", "scikit-image (>=0.17.2)"]
+
+[[package]]
 name = "scipy"
 version = "1.13.0"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -1651,6 +1725,17 @@ postgresql-psycopg2cffi = ["psycopg2cffi"]
 pymysql = ["pymysql", "pymysql (<1)"]
 
 [[package]]
+name = "threadpoolctl"
+version = "3.4.0"
+description = "threadpoolctl"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "threadpoolctl-3.4.0-py3-none-any.whl", hash = "sha256:8f4c689a65b23e5ed825c8436a92b818aac005e0f3715f6a1664d7c7ee29d262"},
+    {file = "threadpoolctl-3.4.0.tar.gz", hash = "sha256:f11b491a03661d6dd7ef692dd422ab34185d982466c49c8f98c8f716b5c93196"},
+]
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -1758,4 +1843,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "36a6d04546785493d6b055d71db82bd3af19b7e4884df40c711c9e0d66553f7a"
+content-hash = "268631187dc581881e8de759cd416b9fb8a0a070f1bfe9f9ecfc1769dd63cc55"
